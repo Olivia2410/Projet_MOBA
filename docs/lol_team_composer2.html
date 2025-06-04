@@ -377,7 +377,7 @@
         async function loadData() {
             try {
                 // 1. Charger les rôles depuis GitHub
-                const rolesResponse = await fetch('../static/champion_roles.csv');
+                const rolesResponse = await fetch('https://Olivia2410.github.io/test/static/champion_roles.csv');
                 if (!rolesResponse.ok) throw new Error('Failed to load roles');
                 const rolesText = await rolesResponse.text();
                 const rolesData = parseCSV(rolesText);
