@@ -344,6 +344,13 @@
     </div>
 
     <script>
+        // ================= CONFIGURATION =================
+        // À PERSONNALISER AVEC VOS INFORMATIONS GITHUB
+        const GITHUB_USERNAME = "Olivia2410";
+        const REPO_NAME = "test";
+        const BRANCH_NAME = "main"; // Ou 'master' selon votre repo
+        // =================================================
+
         // Variables globales
         let championData = { roles: { Top: [], Jungle: [], Mid: [], ADC: [], Support: [] } };
         let championRoles = {};
@@ -376,56 +383,54 @@
         // Charger les données
         async function loadData() {
             try {
-                // 1. Charger les rôles depuis GitHub
-                const rolesResponse = await fetch('https://Olivia2410.github.io/test/static/champion_roles.csv');
-                if (!rolesResponse.ok) throw new Error('Failed to load roles');
+                const baseUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/${BRANCH_NAME}/static`;
+                
+                // 1. Charger les rôles des champions
+                const rolesResponse = await fetch(`${baseUrl}/champion_roles.csv`);
+                if (!rolesResponse.ok) throw new Error('Échec du chargement des rôles');
                 const rolesText = await rolesResponse.text();
                 const rolesData = parseCSV(rolesText);
                 
-                // 2. Mapper les rôles génériques aux rôles LoL
-                const roleMapping = {
-                    'fighter': ['Top', 'Jungle'],
-                    'tank': ['Top', 'Support'],
-                    'assassin': ['Jungle', 'Mid'],
-                    'mage': ['Mid', 'Support'],
-                    'marksman': ['ADC'],
-                    'support': ['Support']
+                // 2. Organiser les champions par rôle LoL
+                const roleCategories = {
+                    Top: ['fighter', 'tank'],
+                    Jungle: ['assassin'],
+                    Mid: ['mage'],
+                    ADC: ['marksman'],
+                    Support: ['support']
                 };
                 
-                // 3. Organiser les champions par rôle LoL
                 championData.roles = { Top: [], Jungle: [], Mid: [], ADC: [], Support: [] };
                 
                 rolesData.forEach(row => {
                     if (row.champion && row.roles) {
                         const roles = row.roles.split(',').map(r => r.trim());
                         roles.forEach(role => {
-                            const lolRoles = roleMapping[role] || ['Top'];
-                            lolRoles.forEach(lolRole => {
-                                if (!championData.roles[lolRole].includes(row.champion)) {
-                                    championData.roles[lolRole].push(row.champion);
+                            for (const [lolRole, types] of Object.entries(roleCategories)) {
+                                if (types.includes(role)) {
+                                    if (!championData.roles[lolRole].includes(row.champion)) {
+                                        championData.roles[lolRole].push(row.champion);
+                                    }
+                                    break;
                                 }
-                            });
+                            }
                         });
                     }
                 });
 
-                // 4. Charger les winrates (optionnel)
-                try {
-                    const winratesResponse = await fetch('../static/predicted_champion_winrates.csv');
-                    if (winratesResponse.ok) {
-                        const winratesText = await winratesResponse.text();
-                        const winratesData = parseCSV(winratesText);
-                        winratesData.forEach(row => {
-                            if (row.Champion && row.Predicted_Winrate) {
-                                championWinrates[row.Champion] = parseFloat(row.Predicted_Winrate);
-                            }
-                        });
-                    }
-                } catch (e) {
-                    console.warn("Winrates non chargés:", e);
+                // 3. Charger les winrates depuis pair_winrate_predictions_with_embeddings.csv
+                const winratesResponse = await fetch(`${baseUrl}/pair_winrate_predictions_with_embeddings.csv`);
+                if (winratesResponse.ok) {
+                    const winratesText = await winratesResponse.text();
+                    const winratesData = parseCSV(winratesText);
+                    winratesData.forEach(row => {
+                        if (row.Champion && row.Predicted_Winrate) {
+                            championWinrates[row.Champion] = parseFloat(row.Predicted_Winrate);
+                        }
+                    });
                 }
 
-                // 5. Préparer les images
+                // 4. Préparer les chemins d'images
                 Object.keys(championRoles).forEach(champ => {
                     let imgName = champ.toLowerCase();
                     if (['aatrox','ahri','akali','akshan','alistar','ambessa'].includes(imgName)) {
@@ -433,10 +438,10 @@
                     } else {
                         imgName = imgName.charAt(0).toUpperCase() + imgName.slice(1) + '.jpg';
                     }
-                    championImages[champ] = `../static/img/${imgName}`;
+                    championImages[champ] = `${baseUrl}/img/${imgName}`;
                 });
 
-                console.log('Données chargées:', championData);
+                console.log('Données chargées avec succès:', championData);
 
             } catch (error) {
                 console.error("Erreur de chargement:", error);
