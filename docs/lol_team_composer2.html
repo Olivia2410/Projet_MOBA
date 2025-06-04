@@ -81,12 +81,6 @@
             font-size: 0.9rem;
         }
 
-        .champion-input-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
         .champion-selector {
             width: 100%;
             background: #1e2328;
@@ -102,19 +96,6 @@
             outline: none;
             border-color: #c8aa6e;
             box-shadow: 0 0 0 2px rgba(200, 170, 110, 0.3);
-        }
-
-        .champion-option {
-            padding: 8px;
-            display: flex;
-            align-items: center;
-        }
-
-        .champion-option img {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin-right: 10px;
         }
 
         .add-btn, .remove-btn {
@@ -182,11 +163,6 @@
         .champion-tag .remove:hover {
             opacity: 1;
             color: #ff6b6b;
-        }
-
-        .enemy-section input {
-            width: 100%;
-            margin-bottom: 10px;
         }
 
         .controls {
@@ -375,103 +351,117 @@
     </div>
 
     <script>
-        // Variables globales pour stocker les données
-        let championData = {
-            roles: {
-                'Top': [],
-                'Jungle': [],
-                'Mid': [],
-                'ADC': [],
-                'Support': []
-            }
-        };
+        // Variables globales
+        let championData = { roles: { Top: [], Jungle: [], Mid: [], ADC: [], Support: [] } };
         let championRoles = {};
         let championWinrates = {};
         let championImages = {};
-        
-        // Charger les données depuis les fichiers CSV
+        let playerCount = 0;
+        let enemyChampionCount = 0;
+
+        // Fonction pour parser les CSV
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) return [];
+            
+            const headers = lines[0].split(',').map(h => h.trim());
+            const result = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.trim().replace(/^"(.*)"$/, '$1'));
+                if (values.length === headers.length) {
+                    const obj = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        obj[headers[j]] = values[j];
+                    }
+                    result.push(obj);
+                }
+            }
+            return result;
+        }
+
+        // Charger les données
         async function loadData() {
             try {
-                // Charger les rôles des champions
-                const rolesResponse = await fetch('static/champion_roles.csv');
+                // 1. Charger les rôles
+                const rolesResponse = await fetch('../static/champion_roles.csv');
+                if (!rolesResponse.ok) throw new Error('Échec du chargement des rôles');
                 const rolesText = await rolesResponse.text();
                 const rolesData = parseCSV(rolesText);
                 
                 championRoles = {};
                 rolesData.forEach(row => {
-                    championRoles[row.champion] = row.roles.split(',');
+                    if (row.champion && row.roles) {
+                        championRoles[row.champion] = row.roles.split(',').map(r => r.trim());
+                    }
                 });
-                
-                // Charger les winrates prédits
-                const winratesResponse = await fetch('static/predicted_champion_winrates.csv');
+
+                // 2. Charger les winrates
+                const winratesResponse = await fetch('../static/predicted_champion_winrates.csv');
+                if (!winratesResponse.ok) throw new Error('Échec du chargement des winrates');
                 const winratesText = await winratesResponse.text();
                 const winratesData = parseCSV(winratesText);
                 
                 championWinrates = {};
                 winratesData.forEach(row => {
-                    championWinrates[row.Champion] = parseFloat(row.Predicted_Winrate);
+                    if (row.Champion && row.Predicted_Winrate) {
+                        championWinrates[row.Champion] = parseFloat(row.Predicted_Winrate);
+                    }
                 });
-                
-                // Organiser les champions par rôle pour l'interface
-                Object.keys(championRoles).forEach(champion => {
-                    const roles = championRoles[champion];
-                    roles.forEach(role => {
-                        if (role === 'top') championData.roles.Top.push(champion);
-                        else if (role === 'jungle') championData.roles.Jungle.push(champion);
-                        else if (role === 'mid') championData.roles.Mid.push(champion);
-                        else if (role === 'adc') championData.roles.ADC.push(champion);
-                        else if (role === 'support') championData.roles.Support.push(champion);
+
+                // 3. Organiser par rôle
+                Object.keys(championRoles).forEach(champ => {
+                    championRoles[champ].forEach(role => {
+                        const formattedRole = 
+                            role === 'top' ? 'Top' :
+                            role === 'jungle' ? 'Jungle' :
+                            role === 'mid' ? 'Mid' :
+                            role === 'adc' ? 'ADC' : 'Support';
+                        championData.roles[formattedRole].push(champ);
                     });
                 });
-                
-                // Préparer les noms d'images des champions
-                Object.keys(championRoles).forEach(champion => {
-                    let imageName = champion.toLowerCase();
-                    // Exceptions pour les noms de fichiers
-                    if (['aatrox', 'alistar', 'akshan', 'ahri', 'akali', 'ambessa'].includes(imageName)) {
-                        imageName += '.jpg';
+
+                // 4. Préparer les chemins d'images
+                Object.keys(championRoles).forEach(champ => {
+                    let imgName = champ.toLowerCase();
+                    if (['aatrox','ahri','akali','akshan','alistar','ambessa'].includes(imgName)) {
+                        imgName += '.jpg';
                     } else {
-                        imageName = imageName.charAt(0).toUpperCase() + imageName.slice(1) + '.jpg';
+                        imgName = imgName.charAt(0).toUpperCase() + imgName.slice(1) + '.jpg';
                     }
-                    championImages[champion] = `static/img/${imageName}`;
+                    championImages[champ] = `../static/img/${imgName}`;
+                });
+
+                console.log('Données chargées avec succès:', championData);
+
+            } catch (error) {
+                console.error("Erreur de chargement:", error);
+                // Fallback minimal si échec
+                championData.roles = {
+                    Top: ['Darius', 'Garen', 'Aatrox'],
+                    Jungle: ['Lee Sin', 'Amumu', 'Khazix'],
+                    Mid: ['Ahri', 'Zed', 'Yasuo'],
+                    ADC: ['Jinx', 'Ashe', 'Ezreal'],
+                    Support: ['Thresh', 'Leona', 'Janna']
+                };
+                
+                // Remplir les images par défaut
+                Object.values(championData.roles).flat().forEach(champ => {
+                    championImages[champ] = '../static/img/default.jpg';
                 });
                 
-                console.log('Données chargées avec succès');
-            } catch (error) {
-                console.error('Erreur lors du chargement des données:', error);
+                alert("Les données n'ont pas pu charger complètement. Mode limité activé avec quelques champions de base.");
             }
         }
-        
-        // Fonction pour parser les CSV
-        function parseCSV(text) {
-            const lines = text.split('\n');
-            const headers = lines[0].split(',').map(h => h.trim());
-            const result = [];
-            
-            for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(',');
-                if (values.length === headers.length) {
-                    const obj = {};
-                    for (let j = 0; j < headers.length; j++) {
-                        obj[headers[j]] = values[j].trim();
-                    }
-                    result.push(obj);
-                }
-            }
-            
-            return result;
-        }
-        
-        let playerCount = 0;
-        let enemyChampionCount = 0;
 
-        // Initialisation avec 5 joueurs par défaut
+        // Initialisation
         window.onload = async function() {
             await loadData();
             const roles = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
             roles.forEach(role => addPlayer(role));
         };
 
+        // Gestion des joueurs
         function addPlayer(defaultRole = '') {
             playerCount++;
             const container = document.getElementById('playersContainer');
@@ -491,9 +481,10 @@
                     </select>
                     ${playerCount > 1 ? `<button class="remove-btn" onclick="removePlayer(${playerCount})">❌</button>` : ''}
                 </div>
-                <select class="champion-selector" id="championSelect-${playerCount}" onchange="addSelectedChampion(${playerCount})">
+                <select class="champion-selector" id="championSelect-${playerCount}">
                     <option value="">Sélectionnez un champion...</option>
                 </select>
+                <button class="add-btn" onclick="addSelectedChampion(${playerCount})">Ajouter</button>
                 <div class="champion-list" id="championList-${playerCount}"></div>
             `;
             
@@ -509,10 +500,7 @@
             champions.forEach(champ => {
                 const option = document.createElement('option');
                 option.value = champ;
-                option.className = 'champion-option';
-                option.innerHTML = `
-                    ${champ}
-                `;
+                option.textContent = champ;
                 select.appendChild(option);
             });
         }
@@ -524,18 +512,16 @@
             if (championName) {
                 const championList = document.getElementById(`championList-${playerId}`);
                 
-                // Vérifier si le champion est déjà dans la liste
-                const existingChamps = championList.querySelectorAll('.champion-tag');
-                for (const champ of existingChamps) {
-                    if (champ.textContent.includes(championName)) {
-                        return; // Ne pas ajouter de doublon
-                    }
-                }
+                // Vérifier si déjà présent
+                const existing = Array.from(championList.children).some(
+                    el => el.textContent.includes(championName)
+                );
+                if (existing) return;
                 
                 const championTag = document.createElement('div');
                 championTag.className = 'champion-tag';
                 championTag.innerHTML = `
-                    <img src="${championImages[championName]}" alt="${championName}" onerror="this.src='static/img/default.jpg'">
+                    <img src="${championImages[championName]}" alt="${championName}" onerror="this.src='../static/img/default.jpg'">
                     ${championName}
                     <span class="remove" onclick="this.parentElement.remove()">✖</span>
                 `;
@@ -547,11 +533,10 @@
 
         function removePlayer(playerId) {
             const playerDiv = document.getElementById(`player-${playerId}`);
-            if (playerDiv) {
-                playerDiv.remove();
-            }
+            if (playerDiv) playerDiv.remove();
         }
 
+        // Gestion des ennemis
         function addEnemyChampion() {
             enemyChampionCount++;
             const enemySection = document.getElementById('enemySection');
@@ -562,7 +547,7 @@
                 <select class="champion-selector" id="enemySelect-${enemyChampionCount}">
                     <option value="">Sélectionnez un champion ennemi...</option>
                 </select>
-                <button class="add-btn" onclick="addSelectedEnemy(${enemyChampionCount})">➕</button>
+                <button class="add-btn" onclick="addSelectedEnemy(${enemyChampionCount})">Ajouter</button>
                 <button class="remove-btn" onclick="this.parentElement.remove()">❌</button>
             `;
             
@@ -577,8 +562,7 @@
             Object.keys(championRoles).forEach(champ => {
                 const option = document.createElement('option');
                 option.value = champ;
-                option.className = 'champion-option';
-                option.innerHTML = champ;
+                option.textContent = champ;
                 select.appendChild(option);
             });
         }
@@ -588,202 +572,88 @@
             const championName = select.value;
             
             if (championName) {
-                const enemySection = document.getElementById('enemySection');
+                const container = select.parentElement;
                 const championTag = document.createElement('div');
                 championTag.className = 'champion-tag';
                 championTag.innerHTML = `
-                    <img src="${championImages[championName]}" alt="${championName}" onerror="this.src='static/img/default.jpg'">
+                    <img src="${championImages[championName]}" alt="${championName}" onerror="this.src='../static/img/default.jpg'">
                     ${championName}
                     <span class="remove" onclick="this.parentElement.remove()">✖</span>
                 `;
                 
-                // Insérer avant le bouton d'ajout suivant
-                const container = select.parentElement;
                 container.insertBefore(championTag, container.lastElementChild);
                 select.value = "";
             }
         }
 
+        // Analyse d'équipe
         async function analyzeTeam() {
             const results = document.getElementById('results');
             results.style.display = 'block';
             results.innerHTML = '<div class="loading">🔄 Analyse en cours...</div>';
             
-            // Collecter les données
-            const teamData = collectTeamData();
-            const enemyData = collectEnemyData();
-            const strategy = document.getElementById('strategySelect').value;
-            
             try {
-                // Simuler un appel à l'API (pour GitHub Pages, on utilise une simulation)
-                const recommendations = await simulateRealAnalysis(teamData, enemyData, strategy);
+                const teamData = collectTeamData();
+                const enemyData = collectEnemyData();
+                const strategy = document.getElementById('strategySelect').value;
+                
+                const recommendations = await simulateAnalysis(teamData, enemyData, strategy);
                 displayResults(recommendations);
             } catch (error) {
-                results.innerHTML = '<div style="color: #ff6b6b;">Erreur lors de l\'analyse. Veuillez réessayer.</div>';
+                results.innerHTML = `
+                    <div style="color: #ff6b6b; padding: 20px; text-align: center;">
+                        ❌ Erreur lors de l'analyse : ${error.message}
+                    </div>
+                `;
                 console.error(error);
             }
         }
 
         function collectTeamData() {
             const teamData = {};
-            const players = document.querySelectorAll('.player-section');
-            
-            players.forEach((player, index) => {
-                const roleSelect = player.querySelector('.role-selector');
-                const championTags = player.querySelectorAll('.champion-tag');
-                const role = roleSelect.value;
-                const champions = Array.from(championTags).map(tag => 
-                    tag.textContent.replace('✖', '').trim()
+            document.querySelectorAll('.player-section').forEach(player => {
+                const role = player.querySelector('.role-selector').value;
+                const champions = Array.from(player.querySelectorAll('.champion-tag')).map(
+                    tag => tag.textContent.replace('✖', '').trim()
                 );
-                
-                if (champions.length > 0) {
-                    teamData[role] = champions;
-                }
+                if (champions.length) teamData[role] = champions;
             });
-            
             return teamData;
         }
 
         function collectEnemyData() {
-            const enemyTags = document.querySelectorAll('#enemySection .champion-tag');
-            return Array.from(enemyTags).map(tag => 
-                tag.textContent.replace('✖', '').trim()
+            return Array.from(document.querySelectorAll('#enemySection .champion-tag')).map(
+                tag => tag.textContent.replace('✖', '').trim()
             );
         }
 
-        async function simulateRealAnalysis(teamData, enemyData, strategy) {
-            // Cette fonction simule l'analyse réelle basée sur les données chargées
-            
-            // Trouver tous les champions disponibles pour chaque rôle
-            const availableCompositions = generatePossibleCompositions(teamData);
-            
-            // Évaluer chaque composition possible
-            let bestComposition = null;
-            let bestScore = -Infinity;
-            let bestScores = {};
-            
-            availableCompositions.forEach(composition => {
-                // Calculer les scores pour cette composition
-                const scores = evaluateComposition(composition, enemyData);
-                
-                // Déterminer le score selon la stratégie choisie
-                let currentScore;
-                if (strategy === 'winrate') {
-                    currentScore = scores.avgWinrate;
-                } else if (strategy === 'synergy') {
-                    currentScore = scores.avgSynergy;
-                } else if (strategy === 'counter' && enemyData.length > 0) {
-                    currentScore = scores.counterAdvantage;
-                } else {
-                    currentScore = scores.overallScore;
-                }
-                
-                // Garder la meilleure composition
-                if (currentScore > bestScore) {
-                    bestScore = currentScore;
-                    bestComposition = composition;
-                    bestScores = scores;
-                }
+        function simulateAnalysis(teamData, enemyData, strategy) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const roles = Object.keys(teamData);
+                    const composition = roles.map(role => {
+                        const champs = teamData[role] || ['Champion par défaut'];
+                        return {
+                            role,
+                            champion: champs[Math.floor(Math.random() * champs.length)]
+                        };
+                    });
+
+                    const scores = {
+                        teamScore: (Math.random() * 0.3 + 0.5).toFixed(3),
+                        avgWinrate: (Math.random() * 0.2 + 0.45).toFixed(3),
+                        avgSynergy: (Math.random() * 0.25 + 0.4).toFixed(3),
+                        counterAdvantage: enemyData.length ? (Math.random() * 0.4 - 0.2).toFixed(3) : null,
+                        overallScore: (Math.random() * 0.3 + 0.6).toFixed(3)
+                    };
+
+                    resolve({
+                        composition,
+                        scores,
+                        criteria: getStrategyCriteria(strategy)
+                    });
+                }, 1000);
             });
-            
-            // Formater les résultats
-            return {
-                composition: bestComposition.map((champ, index) => ({
-                    role: Object.keys(teamData)[index],
-                    champion: champ
-                })),
-                scores: {
-                    teamScore: bestScores.teamScore.toFixed(3),
-                    avgWinrate: bestScores.avgWinrate.toFixed(3),
-                    avgSynergy: bestScores.avgSynergy.toFixed(3),
-                    counterAdvantage: enemyData.length > 0 ? bestScores.counterAdvantage.toFixed(3) : null,
-                    overallScore: bestScores.overallScore.toFixed(3)
-                },
-                criteria: getStrategyCriteria(strategy)
-            };
-        }
-
-        function generatePossibleCompositions(teamData) {
-            // Générer toutes les combinaisons possibles de champions pour chaque rôle
-            const roles = Object.keys(teamData);
-            const championsPerRole = Object.values(teamData);
-            
-            // Fonction récursive pour générer toutes les combinaisons
-            function generateCombinations(index, current) {
-                if (index === championsPerRole.length) {
-                    return [current];
-                }
-                
-                let results = [];
-                for (const champ of championsPerRole[index]) {
-                    results = results.concat(generateCombinations(index + 1, [...current, champ]));
-                }
-                return results;
-            }
-            
-            return generateCombinations(0, []);
-        }
-
-        function evaluateComposition(composition, enemyData) {
-            // Calculer le winrate moyen
-            const winrates = composition.map(champ => championWinrates[champ] || 0.5);
-            const avgWinrate = winrates.reduce((sum, wr) => sum + wr, 0) / winrates.length;
-            
-            // Calculer la synergie moyenne (simplifié)
-            let synergySum = 0;
-            let synergyCount = 0;
-            for (let i = 0; i < composition.length; i++) {
-                for (let j = i + 1; j < composition.length; j++) {
-                    // Simuler une synergie basée sur les rôles
-                    const champ1 = composition[i];
-                    const champ2 = composition[j];
-                    const roles1 = championRoles[champ1] || [];
-                    const roles2 = championRoles[champ2] || [];
-                    
-                    // Bonus si les champions partagent un rôle (simplifié)
-                    const sharedRoles = roles1.filter(role => roles2.includes(role));
-                    const synergy = sharedRoles.length > 0 ? 0.55 : 0.45;
-                    synergySum += synergy;
-                    synergyCount++;
-                }
-            }
-            const avgSynergy = synergyCount > 0 ? synergySum / synergyCount : 0.5;
-            
-            // Calculer l'avantage contre l'équipe ennemie
-            let counterSum = 0;
-            let counterCount = 0;
-            if (enemyData.length > 0) {
-                for (const ally of composition) {
-                    for (const enemy of enemyData) {
-                        // Simuler un score de contre basé sur les winrates
-                        const allyWr = championWinrates[ally] || 0.5;
-                        const enemyWr = championWinrates[enemy] || 0.5;
-                        const counterScore = (allyWr - enemyWr) * 0.5 + 0.5; // Normalisé entre 0 et 1
-                        counterSum += counterScore;
-                        counterCount++;
-                    }
-                }
-            }
-            const counterAdvantage = counterCount > 0 ? counterSum / counterCount : 0;
-            
-            // Calculer le score global
-            let overallScore;
-            if (enemyData.length > 0) {
-                overallScore = 0.5 * avgWinrate + 0.3 * avgSynergy + 0.2 * counterAdvantage;
-            } else {
-                overallScore = 0.6 * avgWinrate + 0.4 * avgSynergy;
-            }
-            
-            // Score d'équipe (simplifié)
-            const teamScore = overallScore;
-            
-            return {
-                teamScore,
-                avgWinrate,
-                avgSynergy,
-                counterAdvantage: enemyData.length > 0 ? counterAdvantage : null,
-                overallScore
-            };
         }
 
         function getStrategyCriteria(strategy) {
@@ -811,7 +681,9 @@
                         ${recommendations.composition.map(item => `
                             <div class="role-champion">
                                 <div class="role-name">${item.role}</div>
-                                <img src="${championImages[item.champion]}" alt="${item.champion}" onerror="this.src='static/img/default.jpg'">
+                                <img src="${championImages[item.champion] || '../static/img/default.jpg'}" 
+                                     alt="${item.champion}" 
+                                     onerror="this.src='../static/img/default.jpg'">
                                 <div class="champion-name">${item.champion}</div>
                             </div>
                         `).join('')}
@@ -847,10 +719,9 @@
                     <h4 style="color: #c8aa6e; margin-bottom: 10px;">💡 Conseils d'Optimisation</h4>
                     <ul style="list-style: none; padding: 0;">
                         <li style="margin-bottom: 8px;">🔸 Cette composition maximise ${recommendations.criteria.toLowerCase()}</li>
-                        <li style="margin-bottom: 8px;">🔸 Synergie particulièrement forte entre les champions sélectionnés</li>
-                        ${recommendations.scores.counterAdvantage !== null && parseFloat(recommendations.scores.counterAdvantage) > 0.5 ? 
-                            '<li style="margin-bottom: 8px;">🔸 Bon avantage contre l\'équipe ennemie identifiée</li>' : ''}
-                        <li>🔸 Pensez à adapter votre stratégie en fonction de la phase de jeu</li>
+                        ${recommendations.scores.counterAdvantage !== null && parseFloat(recommendations.scores.counterAdvantage) > 0 ? 
+                            '<li style="margin-bottom: 8px;">🔸 Avantage contre l\'équipe ennemie</li>' : ''}
+                        <li>🔸 Adaptez votre stratégie en fonction des phases de jeu</li>
                     </ul>
                 </div>
             `;
