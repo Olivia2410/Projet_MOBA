@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-center">🛡️ Counter Score entre deux champions</h1>
+
+<form method="post" class="bg-white shadow p-6 rounded-md w-full max-w-lg mx-auto space-y-4">
+  <div>
+    <label for="champ1" class="block mb-1 font-medium text-gray-700">Champion 1 :</label>
+    <select name="champ1" id="champ1" required class="w-full border border-gray-300 px-3 py-2 rounded-md">
+      {% for champ in champions %}
+        <option value="{{ champ }}" {% if champ1 == champ %}selected{% endif %}>{{ champ }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label for="champ2" class="block mb-1 font-medium text-gray-700">Champion 2 :</label>
+    <select name="champ2" id="champ2" required class="w-full border border-gray-300 px-3 py-2 rounded-md">
+      {% for champ in champions %}
+        <option value="{{ champ }}" {% if champ2 == champ %}selected{% endif %}>{{ champ }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label for="depth" class="block mb-1 font-medium text-gray-700">Profondeur d’analyse :</label>
+    <select name="depth" id="depth" class="w-full border border-gray-300 px-3 py-2 rounded-md">
+      <option value="1" {% if depth == 1 %}selected{% endif %}>Directe (1)</option>
+      <option value="2" {% if depth == 2 %}selected{% endif %}>Transitive (2)</option>
+    </select>
+  </div>
+
+  <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md w-full">
+    Calculer le counter score
+  </button>
+</form>
+
+{% if score is defined %}
+  <div class="mt-8 bg-gray-100 p-6 rounded shadow max-w-lg mx-auto text-center">
+    <h2 class="text-xl font-semibold mb-4">Résultat :</h2>
+    <p class="text-lg">🧠 <strong>{{ champ1 }}</strong> contre <strong>{{ champ2 }}</strong></p>
+    <p class="mt-2 text-xl font-bold text-blue-700">Counter Score : {{ score }}</p>
+    <p class="mt-1 text-gray-600">Méthode utilisée : {% if depth == 1 %}Directe{% else %}Transitive{% endif %}</p>
+  </div>
+{% endif %}
+
+<div class="mt-6 text-center">
+  <a href="/" class="text-blue-500 hover:underline">← Retour à l'accueil</a>
+</div>
+{% endblock %}

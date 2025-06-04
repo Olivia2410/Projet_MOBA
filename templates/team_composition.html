@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <h2 class="text-2xl font-bold mb-6 text-center">🛡️ Générateur de composition d'équipe</h2>
+
+    <form method="post" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="top_champs" class="block font-semibold mb-1">Top :</label>
+                <input type="text" id="top_champs" name="top_champs" value="{{ player_champions.top|join(', ') if player_champions }}" class="w-full p-2 border rounded text-black" placeholder="Ex: Aatrox, Garen">
+            </div>
+            <div>
+                <label for="jungle_champs" class="block font-semibold mb-1">Jungle :</label>
+                <input type="text" id="jungle_champs" name="jungle_champs" value="{{ player_champions.jungle|join(', ') if player_champions }}" class="w-full p-2 border rounded text-black" placeholder="Ex: Lee Sin, Kha'Zix">
+            </div>
+            <div>
+                <label for="mid_champs" class="block font-semibold mb-1">Mid :</label>
+                <input type="text" id="mid_champs" name="mid_champs" value="{{ player_champions.mid|join(', ') if player_champions }}" class="w-full p-2 border rounded text-black" placeholder="Ex: Ahri, Zed">
+            </div>
+        </div>
+
+        <div>
+            <label for="enemy_compo" class="block font-semibold mb-1">Composition ennemie (optionnel):</label>
+            <input type="text" id="enemy_compo" name="enemy_compo" value="{{ enemy_compo or '' }}" class="w-full p-2 border rounded" placeholder="Ex: Yasuo, Rengar, Malphite">
+        </div>
+
+        <div>
+            <label for="strategy" class="block font-semibold mb-1">Stratégie :</label>
+            <select name="strategy" id="strategy" class="w-full p-2 border rounded">
+                <option value="overall" {% if strategy == "overall" %}selected{% endif %}>Score global</option>
+                <option value="winrate" {% if strategy == "winrate" %}selected{% endif %}>Meilleur winrate</option>
+                <option value="synergy" {% if strategy == "synergy" %}selected{% endif %}>Meilleure synergie</option>
+                {% if enemy_compo %}
+                <option value="counter" {% if strategy == "counter" %}selected{% endif %}>Meilleur contre</option>
+                {% endif %}
+            </select>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Analyser</button>
+        </div>
+    </form>
+
+    {% if recommendation %}
+    <div class="mt-10">
+        <h3 class="text-xl font-bold mb-2">🎯 Meilleure composition : {{ recommendation.criteria }}</h3>
+        <p class="mb-2">🧩 Composition : <strong>{{ recommendation.composition|join(', ') }}</strong></p>
+        <ul class="mb-6 list-disc list-inside space-y-1">
+            <li>Winrate moyen : {{ (recommendation.avg_winrate * 100)|round(2) }}%</li>
+            <li>Synergie moyenne : {{ (recommendation.avg_synergy * 100)|round(2) }}%</li>
+            {% if recommendation.counter_advantage is not none %}
+            <li>Avantage contre : {{ (recommendation.counter_advantage * 100)|round(2) }}%</li>
+            {% endif %}
+            <li>Score global : {{ (recommendation.overall_score * 100)|round(2) }}%</li>
+        </ul>
+
+        <h4 class="text-lg font-semibold mt-8 mb-4">📊 Toutes les combinaisons possibles</h4>
+        <div class="overflow-auto">
+            <table class="w-full table-auto border border-gray-300 rounded shadow text-sm">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="p-2 border">Composition</th>
+                        <th class="p-2 border">Winrate</th>
+                        <th class="p-2 border">Synergie</th>
+                        {% if enemy_compo %}
+                        <th class="p-2 border">Contre</th>
+                        {% endif %}
+                        <th class="p-2 border">Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comp in all_compositions %}
+                    <tr class="{% if comp.composition == recommendation.composition %}bg-green-100 font-semibold{% endif %}">
+                        <td class="p-2 border">{{ comp.composition|join(', ') }}</td>
+                        <td class="p-2 border">{{ (comp.avg_winrate * 100)|round(2) }}%</td>
+                        <td class="p-2 border">{{ (comp.avg_synergy * 100)|round(2) }}%</td>
+                        {% if enemy_compo %}
+                        <td class="p-2 border">{{ (comp.counter_advantage * 100)|round(2) }}%</td>
+                        {% endif %}
+                        <td class="p-2 border">{{ (comp.overall_score * 100)|round(2) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

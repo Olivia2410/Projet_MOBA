@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title or "SynerScope" }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1E90FF',
+            dark: '#0e0e10',
+          },
+        },
+      }
+    }
+  </script>
+</head>
+<body class="bg-black text-white min-h-screen">
+
+  <!-- Barre de navigation -->
+  <nav class="bg-gray-900 border-b border-gray-800 shadow-md">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+      <div class="text-3xl font-extrabold tracking-tight text-blue-400">LoLytics</div>
+      <div class="hidden md:flex space-x-6 text-sm font-medium">
+        <a href="/champions" class="hover:text-yellow-400 transition">Champions</a>
+        <a href="/counter" class="hover:text-yellow-400 transition">Counters</a>
+        <a href="/synergy" class="hover:text-yellow-400 transition">Synergies</a>
+        <a href="/recommend" class="hover:text-yellow-400 transition">Recommendations</a>
+        <a href="/team_composition" class="hover:text-yellow-400 transition">Composition</a>
+      </div>
+      <button class="md:hidden text-white text-2xl">
+        ☰
+      </button>
+    </div>
+  </nav>
+
+  <!-- Contenu principal -->
+  <div class="container mx-auto px-6 py-8">
+    {% block content %}{% endblock %}
+  </div>
+
+</body>
+</html>

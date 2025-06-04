@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-6">🔍 Analyse de draft et recommandations</h1>
+
+<form method="post" class="bg-white shadow p-6 rounded-md w-full max-w-3xl space-y-6">
+  <div>
+    <label for="team" class="block mb-2 font-semibold text-gray-700">Équipe alliée (champions séparés par virgule) :</label>
+    <input type="text" name="team" id="team" required
+           value="{{ team or '' }}"
+           class="w-full border border-gray-300 px-3 py-2 rounded-md"
+           placeholder="ex: Ahri, Garen, Lux, Jhin, Thresh">
+  </div>
+
+  <div>
+    <label for="enemy" class="block mb-2 font-semibold text-gray-700">Équipe ennemie (champions séparés par virgule) :</label>
+    <input type="text" name="enemy" id="enemy" required
+           value="{{ enemy or '' }}"
+           class="w-full border border-gray-300 px-3 py-2 rounded-md"
+           placeholder="ex: Yasuo, Darius, Morgana, Ezreal, Leona">
+  </div>
+
+  <button type="submit"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md">
+    Analyser et recommander
+  </button>
+</form>
+
+{% if recos %}
+  <div class="mt-10 bg-gray-100 p-5 rounded shadow max-w-2xl">
+    <h2 class="text-xl font-semibold mb-4">💡 Champions recommandés :</h2>
+    <ul class="space-y-2">
+      {% for champ, score in recos %}
+        <li class="text-lg">
+          <strong>{{ champ }}</strong> — Score : <span class="text-blue-600 font-semibold">{{ score }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+{% if analysis %}
+  <div class="mt-8 bg-gray-100 p-5 rounded shadow max-w-2xl">
+    <h2 class="text-xl font-semibold mb-4">📊 Analyse de la composition :</h2>
+    <ul class="text-lg space-y-1">
+      <li>Score de votre équipe : <strong>{{ analysis.team_score }}</strong></li>
+      <li>Score de l'équipe ennemie : <strong>{{ analysis.enemy_score }}</strong></li>
+      <li>Avantage counter : <strong>{{ analysis.counter_advantage }}</strong></li>
+      <li>Probabilité de victoire estimée : <strong>{{ (analysis.predicted_win_probability * 100) | round(2) }}%</strong></li>
+    </ul>
+  </div>
+{% endif %}
+
+<div class="mt-6">
+  <a href="/" class="text-blue-500 hover:underline">← Retour à l'accueil</a>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-gray-900 text-white min-h-screen p-6">
+  <h1 class="text-4xl font-extrabold text-white mb-8 border-b border-gray-700 pb-2">📊 Statistiques des Champions</h1>
+
+  <form method="get" class="mb-6 flex gap-2">
+    <input name="q" type="text" placeholder="Rechercher un champion..."
+           value="{{ query or '' }}"
+           class="flex-1 px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow">Rechercher</button>
+  </form>
+
+  <div class="overflow-x-auto rounded-lg shadow-lg border border-gray-800">
+    <table class="min-w-full text-sm bg-gray-800 rounded">
+      <thead class="bg-gray-700 text-gray-300 text-xs uppercase tracking-wider">
+        <tr>
+          <th class="px-5 py-3 text-left">Champion</th>
+          <th class="px-5 py-3 text-left">Winrate</th>
+          <th class="px-5 py-3 text-left">Pick rates</th>
+          <th class="px-5 py-3 text-left">Progression</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% for champ, winrate,pick_rate  in champions %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-5 py-3 flex items-center gap-3">
+            <img src="/static/img/{{ champ|lower }}.png" alt="{{ champ }}" class="w-10 h-10 rounded-full border border-gray-600">
+            <span class="font-semibold text-white">{{ champ }}</span>
+          </td>
+          <td class="px-5 py-3 font-semibold {% if winrate > 0.52 %}text-green-400{% elif winrate < 0.48 %}text-red-400{% else %}text-yellow-400{% endif %}">
+            {{ '%.2f' | format(winrate * 100) }}%
+          </td>
+          <td class="px-5 py-3 font-semibold {% if pick_rate > 2 %}text-green-400{% elif pick_rate < 1 %}text-red-400{% else %}text-yellow-400{% endif %}">
+            {{ "%.2f"|format(pick_rate) }}%
+          </td>
+
+          <td class="px-5 py-3">
+            <div class="bg-gray-600 h-2 w-full rounded">
+              <div class="bg-blue-500 h-2 rounded" style="width: {{ (winrate * 100) | round(2) }}%"></div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
