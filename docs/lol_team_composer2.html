@@ -305,20 +305,14 @@
         <h1>🏆 League of Legends - Compositeur d'Équipe</h1>
         
         <div class="main-content">
-            <!-- Section Configuration Équipe -->
             <div class="section">
                 <h2>⚔️ Configuration de l'Équipe</h2>
-                
-                <div id="playersContainer">
-                    <!-- Les joueurs seront générés dynamiquement -->
-                </div>
-                
+                <div id="playersContainer"></div>
                 <button onclick="addPlayer()" class="add-btn" style="margin-top: 15px;">
                     ➕ Ajouter un Joueur
                 </button>
             </div>
             
-            <!-- Section Équipe Ennemie -->
             <div class="section">
                 <h2>🎯 Équipe Ennemie (Optionnel)</h2>
                 <div class="enemy-section" id="enemySection">
@@ -332,7 +326,6 @@
             </div>
         </div>
         
-        <!-- Contrôles et Analyse -->
         <div class="section">
             <h2>🔍 Analyse et Recommandations</h2>
             <div class="controls">
@@ -383,45 +376,56 @@
         // Charger les données
         async function loadData() {
             try {
-                // 1. Charger les rôles
-                const rolesResponse = await fetch('https://Olivia2410.github.io/test/static/champion_roles.csv');
-                if (!rolesResponse.ok) throw new Error('Échec du chargement des rôles');
+                // 1. Charger les rôles depuis GitHub
+                const rolesResponse = await fetch('../static/champion_roles.csv');
+                if (!rolesResponse.ok) throw new Error('Failed to load roles');
                 const rolesText = await rolesResponse.text();
                 const rolesData = parseCSV(rolesText);
                 
-                championRoles = {};
+                // 2. Mapper les rôles génériques aux rôles LoL
+                const roleMapping = {
+                    'fighter': ['Top', 'Jungle'],
+                    'tank': ['Top', 'Support'],
+                    'assassin': ['Jungle', 'Mid'],
+                    'mage': ['Mid', 'Support'],
+                    'marksman': ['ADC'],
+                    'support': ['Support']
+                };
+                
+                // 3. Organiser les champions par rôle LoL
+                championData.roles = { Top: [], Jungle: [], Mid: [], ADC: [], Support: [] };
+                
                 rolesData.forEach(row => {
                     if (row.champion && row.roles) {
-                        championRoles[row.champion] = row.roles.split(',').map(r => r.trim());
+                        const roles = row.roles.split(',').map(r => r.trim());
+                        roles.forEach(role => {
+                            const lolRoles = roleMapping[role] || ['Top'];
+                            lolRoles.forEach(lolRole => {
+                                if (!championData.roles[lolRole].includes(row.champion)) {
+                                    championData.roles[lolRole].push(row.champion);
+                                }
+                            });
+                        });
                     }
                 });
 
-                // 2. Charger les winrates
-                const winratesResponse = await fetch('../static/predicted_champion_winrates.csv');
-                if (!winratesResponse.ok) throw new Error('Échec du chargement des winrates');
-                const winratesText = await winratesResponse.text();
-                const winratesData = parseCSV(winratesText);
-                
-                championWinrates = {};
-                winratesData.forEach(row => {
-                    if (row.Champion && row.Predicted_Winrate) {
-                        championWinrates[row.Champion] = parseFloat(row.Predicted_Winrate);
+                // 4. Charger les winrates (optionnel)
+                try {
+                    const winratesResponse = await fetch('../static/predicted_champion_winrates.csv');
+                    if (winratesResponse.ok) {
+                        const winratesText = await winratesResponse.text();
+                        const winratesData = parseCSV(winratesText);
+                        winratesData.forEach(row => {
+                            if (row.Champion && row.Predicted_Winrate) {
+                                championWinrates[row.Champion] = parseFloat(row.Predicted_Winrate);
+                            }
+                        });
                     }
-                });
+                } catch (e) {
+                    console.warn("Winrates non chargés:", e);
+                }
 
-                // 3. Organiser par rôle
-                Object.keys(championRoles).forEach(champ => {
-                    championRoles[champ].forEach(role => {
-                        const formattedRole = 
-                            role === 'top' ? 'Top' :
-                            role === 'jungle' ? 'Jungle' :
-                            role === 'mid' ? 'Mid' :
-                            role === 'adc' ? 'ADC' : 'Support';
-                        championData.roles[formattedRole].push(champ);
-                    });
-                });
-
-                // 4. Préparer les chemins d'images
+                // 5. Préparer les images
                 Object.keys(championRoles).forEach(champ => {
                     let imgName = champ.toLowerCase();
                     if (['aatrox','ahri','akali','akshan','alistar','ambessa'].includes(imgName)) {
@@ -432,12 +436,19 @@
                     championImages[champ] = `../static/img/${imgName}`;
                 });
 
-                console.log('Données chargées avec succès:', championData);
+                console.log('Données chargées:', championData);
 
             } catch (error) {
-                console.error("Échec critique:", error);
-                // Solution radicale - rechargez la page
-                setTimeout(() => location.reload(), 3000);
+                console.error("Erreur de chargement:", error);
+                // Fallback avec des champions de base
+                championData.roles = {
+                    Top: ['Darius', 'Garen', 'Aatrox', 'Malphite', 'Sett'],
+                    Jungle: ['Lee Sin', 'Amumu', 'Khazix', 'Master Yi', 'Warwick'],
+                    Mid: ['Ahri', 'Zed', 'Yasuo', 'Lux', 'Syndra'],
+                    ADC: ['Jinx', 'Ashe', 'Ezreal', 'Caitlyn', 'Vayne'],
+                    Support: ['Thresh', 'Leona', 'Janna', 'Lulu', 'Blitzcrank']
+                };
+                alert("Chargement partiel - mode dégradé activé");
             }
         }
 
@@ -508,7 +519,9 @@
                 const championTag = document.createElement('div');
                 championTag.className = 'champion-tag';
                 championTag.innerHTML = `
-                    <img src="${championImages[championName]}" alt="${championName}" onerror="this.src='../static/img/default.jpg'">
+                    <img src="${championImages[championName] || '../static/img/default.jpg'}" 
+                         alt="${championName}" 
+                         onerror="this.src='../static/img/default.jpg'">
                     ${championName}
                     <span class="remove" onclick="this.parentElement.remove()">✖</span>
                 `;
@@ -546,7 +559,9 @@
             const select = document.getElementById(`enemySelect-${inputId}`);
             select.innerHTML = '<option value="">Sélectionnez un champion ennemi...</option>';
             
-            Object.keys(championRoles).forEach(champ => {
+            // Tous les champions de tous les rôles
+            const allChamps = [...new Set(Object.values(championData.roles).flat())];
+            allChamps.forEach(champ => {
                 const option = document.createElement('option');
                 option.value = champ;
                 option.textContent = champ;
@@ -563,7 +578,9 @@
                 const championTag = document.createElement('div');
                 championTag.className = 'champion-tag';
                 championTag.innerHTML = `
-                    <img src="${championImages[championName]}" alt="${championName}" onerror="this.src='../static/img/default.jpg'">
+                    <img src="${championImages[championName] || '../static/img/default.jpg'}" 
+                         alt="${championName}" 
+                         onerror="this.src='../static/img/default.jpg'">
                     ${championName}
                     <span class="remove" onclick="this.parentElement.remove()">✖</span>
                 `;
@@ -617,7 +634,7 @@
         function simulateAnalysis(teamData, enemyData, strategy) {
             return new Promise(resolve => {
                 setTimeout(() => {
-                    const roles = Object.keys(teamData);
+                    const roles = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
                     const composition = roles.map(role => {
                         const champs = teamData[role] || ['Champion par défaut'];
                         return {
