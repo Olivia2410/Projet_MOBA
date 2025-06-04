@@ -1,1 +1,627 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL Team Composer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1e2328 50%, #3c3c41 100%);
+            color: #f0e6d2;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #c89b3c;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: rgba(16, 26, 33, 0.8);
+            border: 2px solid #463714;
+            border-radius: 12px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section h2 {
+            color: #c8aa6e;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #463714;
+            padding-bottom: 10px;
+        }
+
+        .player-section {
+            margin-bottom: 25px;
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .player-title {
+            color: #c8aa6e;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .role-selector {
+            background: #1e2328;
+            border: 1px solid #463714;
+            color: #f0e6d2;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .champion-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .champion-input {
+            flex: 1;
+            background: #1e2328;
+            border: 1px solid #463714;
+            color: #f0e6d2;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .champion-input:focus {
+            outline: none;
+            border-color: #c8aa6e;
+            box-shadow: 0 0 0 2px rgba(200, 170, 110, 0.3);
+        }
+
+        .add-btn, .remove-btn {
+            background: #c8aa6e;
+            border: none;
+            color: #0f1419;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn:hover {
+            background: #f0e6d2;
+            transform: translateY(-1px);
+        }
+
+        .remove-btn {
+            background: #cd5c5c;
+            color: white;
+        }
+
+        .remove-btn:hover {
+            background: #dc143c;
+        }
+
+        .champion-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .champion-tag {
+            background: linear-gradient(135deg, #463714, #5bc0de);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .champion-tag:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(91, 192, 222, 0.3);
+        }
+
+        .champion-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.7;
+        }
+
+        .champion-tag .remove:hover {
+            opacity: 1;
+            color: #ff6b6b;
+        }
+
+        .enemy-section input {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .strategy-selector {
+            background: #1e2328;
+            border: 1px solid #463714;
+            color: #f0e6d2;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, #c8aa6e, #f0e6d2);
+            border: none;
+            color: #0f1419;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(200, 170, 110, 0.3);
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(200, 170, 110, 0.5);
+        }
+
+        .results {
+            grid-column: 1 / -1;
+            background: rgba(16, 26, 33, 0.8);
+            border: 2px solid #463714;
+            border-radius: 12px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .recommendation-card {
+            background: linear-gradient(135deg, #1e2328, #3c3c41);
+            border: 1px solid #c8aa6e;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .composition-display {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .role-champion {
+            text-align: center;
+            background: rgba(70, 55, 20, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #463714;
+        }
+
+        .role-name {
+            font-size: 0.8rem;
+            color: #c8aa6e;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .champion-name {
+            font-weight: bold;
+            color: #f0e6d2;
+        }
+
+        .scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .score-item {
+            background: rgba(70, 55, 20, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.85rem;
+            color: #c8aa6e;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #f0e6d2;
+        }
+
+        .loading {
+            text-align: center;
+            color: #c8aa6e;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .composition-display {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 League of Legends - Compositeur d'Équipe</h1>
+        
+        <div class="main-content">
+            <!-- Section Configuration Équipe -->
+            <div class="section">
+                <h2>⚔️ Configuration de l'Équipe</h2>
+                
+                <div id="playersContainer">
+                    <!-- Les joueurs seront générés dynamiquement -->
+                </div>
+                
+                <button onclick="addPlayer()" class="add-btn" style="margin-top: 15px;">
+                    ➕ Ajouter un Joueur
+                </button>
+            </div>
+            
+            <!-- Section Équipe Ennemie -->
+            <div class="section">
+                <h2>🎯 Équipe Ennemie (Optionnel)</h2>
+                <div class="enemy-section" id="enemySection">
+                    <p style="margin-bottom: 15px; color: #c8aa6e;">
+                        Ajoutez les champions que vous rencontrez souvent :
+                    </p>
+                </div>
+                <button onclick="addEnemyChampion()" class="add-btn">
+                    ➕ Ajouter Champion Ennemi
+                </button>
+            </div>
+        </div>
+        
+        <!-- Contrôles et Analyse -->
+        <div class="section">
+            <h2>🔍 Analyse et Recommandations</h2>
+            <div class="controls">
+                <select class="strategy-selector" id="strategySelect">
+                    <option value="overall">Score Global</option>
+                    <option value="winrate">Meilleur Winrate</option>
+                    <option value="synergy">Meilleure Synergie</option>
+                    <option value="counter">Meilleur Counter</option>
+                </select>
+                <button onclick="analyzeTeam()" class="analyze-btn">
+                    🚀 Analyser et Recommander
+                </button>
+            </div>
+            <div id="results" class="results" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Données simulées (en attendant l'intégration avec votre backend)
+        const championData = {
+            // Champions populaires par rôle
+            roles: {
+                'Top': ['Aatrox', 'Darius', 'Garen', 'Fiora', 'Camille', 'Jax', 'Irelia', 'Shen'],
+                'Jungle': ['Graves', 'Khazix', 'Elise', 'Udyr', 'Hecarim', 'Kindred', 'Nidalee'],
+                'Mid': ['Yasuo', 'Zed', 'Ahri', 'Syndra', 'Orianna', 'Leblanc', 'Azir'],
+                'ADC': ['Jinx', 'Caitlyn', 'Vayne', 'Ezreal', 'Lucian', 'Kai\'sa', 'Jhin'],
+                'Support': ['Thresh', 'Blitzcrank', 'Leona', 'Morgana', 'Lulu', 'Nami', 'Braum']
+            },
+            // Winrates simulés
+            winrates: {
+                'Aatrox': 0.52, 'Darius': 0.51, 'Garen': 0.53, 'Yasuo': 0.49, 'Zed': 0.48,
+                'Jinx': 0.51, 'Thresh': 0.52, 'Graves': 0.50, 'Ahri': 0.51, 'Caitlyn': 0.50
+            }
+        };
+
+        let playerCount = 0;
+        let enemyChampionCount = 0;
+
+        // Initialisation avec 5 joueurs par défaut
+        window.onload = function() {
+            const roles = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
+            roles.forEach(role => addPlayer(role));
+        };
+
+        function addPlayer(defaultRole = '') {
+            playerCount++;
+            const container = document.getElementById('playersContainer');
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'player-section';
+            playerDiv.id = `player-${playerCount}`;
+            
+            playerDiv.innerHTML = `
+                <div class="player-header">
+                    <span class="player-title">Joueur ${playerCount}</span>
+                    <select class="role-selector" onchange="updateRoleSuggestions(${playerCount}, this.value)">
+                        <option value="Top" ${defaultRole === 'Top' ? 'selected' : ''}>🛡️ Top</option>
+                        <option value="Jungle" ${defaultRole === 'Jungle' ? 'selected' : ''}>🌲 Jungle</option>
+                        <option value="Mid" ${defaultRole === 'Mid' ? 'selected' : ''}>⚡ Mid</option>
+                        <option value="ADC" ${defaultRole === 'ADC' ? 'selected' : ''}>🏹 ADC</option>
+                        <option value="Support" ${defaultRole === 'Support' ? 'selected' : ''}>🛡️ Support</option>
+                    </select>
+                    ${playerCount > 1 ? `<button class="remove-btn" onclick="removePlayer(${playerCount})">❌</button>` : ''}
+                </div>
+                <div class="champion-input-container">
+                    <input type="text" class="champion-input" placeholder="Nom du champion..." 
+                           id="championInput-${playerCount}" onkeypress="handleChampionKeypress(event, ${playerCount})">
+                    <button class="add-btn" onclick="addChampionToPlayer(${playerCount})">➕</button>
+                </div>
+                <div class="champion-list" id="championList-${playerCount}"></div>
+            `;
+            
+            container.appendChild(playerDiv);
+            updateRoleSuggestions(playerCount, defaultRole || 'Top');
+        }
+
+        function removePlayer(playerId) {
+            const playerDiv = document.getElementById(`player-${playerId}`);
+            if (playerDiv) {
+                playerDiv.remove();
+            }
+        }
+
+        function updateRoleSuggestions(playerId, role) {
+            const input = document.getElementById(`championInput-${playerId}`);
+            const suggestions = championData.roles[role] || [];
+            
+            // Ajouter un datalist pour l'autocomplétion
+            let datalistId = `suggestions-${playerId}`;
+            let existingDatalist = document.getElementById(datalistId);
+            if (existingDatalist) {
+                existingDatalist.remove();
+            }
+            
+            const datalist = document.createElement('datalist');
+            datalist.id = datalistId;
+            suggestions.forEach(champ => {
+                const option = document.createElement('option');
+                option.value = champ;
+                datalist.appendChild(option);
+            });
+            
+            input.setAttribute('list', datalistId);
+            document.body.appendChild(datalist);
+        }
+
+        function handleChampionKeypress(event, playerId) {
+            if (event.key === 'Enter') {
+                addChampionToPlayer(playerId);
+            }
+        }
+
+        function addChampionToPlayer(playerId) {
+            const input = document.getElementById(`championInput-${playerId}`);
+            const championName = input.value.trim();
+            
+            if (championName) {
+                const championList = document.getElementById(`championList-${playerId}`);
+                const championTag = document.createElement('div');
+                championTag.className = 'champion-tag';
+                championTag.innerHTML = `
+                    ${championName}
+                    <span class="remove" onclick="this.parentElement.remove()">✖</span>
+                `;
+                
+                championList.appendChild(championTag);
+                input.value = '';
+            }
+        }
+
+        function addEnemyChampion() {
+            enemyChampionCount++;
+            const enemySection = document.getElementById('enemySection');
+            
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'champion-input-container';
+            inputContainer.innerHTML = `
+                <input type="text" class="champion-input" placeholder="Champion ennemi..." 
+                       id="enemyInput-${enemyChampionCount}" onkeypress="handleEnemyKeypress(event, ${enemyChampionCount})">
+                <button class="add-btn" onclick="addEnemyChampionFromInput(${enemyChampionCount})">➕</button>
+                <button class="remove-btn" onclick="this.parentElement.remove()">❌</button>
+            `;
+            
+            enemySection.appendChild(inputContainer);
+        }
+
+        function handleEnemyKeypress(event, inputId) {
+            if (event.key === 'Enter') {
+                addEnemyChampionFromInput(inputId);
+            }
+        }
+
+        function addEnemyChampionFromInput(inputId) {
+            const input = document.getElementById(`enemyInput-${inputId}`);
+            const championName = input.value.trim();
+            
+            if (championName) {
+                input.value = championName;
+                input.disabled = true;
+            }
+        }
+
+        function analyzeTeam() {
+            const results = document.getElementById('results');
+            results.style.display = 'block';
+            results.innerHTML = '<div class="loading">🔄 Analyse en cours...</div>';
+            
+            // Collecter les données
+            const teamData = collectTeamData();
+            const enemyData = collectEnemyData();
+            const strategy = document.getElementById('strategySelect').value;
+            
+            // Simulation d'analyse (remplacer par appel à votre backend)
+            setTimeout(() => {
+                const recommendations = simulateAnalysis(teamData, enemyData, strategy);
+                displayResults(recommendations);
+            }, 1500);
+        }
+
+        function collectTeamData() {
+            const teamData = {};
+            const players = document.querySelectorAll('.player-section');
+            
+            players.forEach((player, index) => {
+                const roleSelect = player.querySelector('.role-selector');
+                const championTags = player.querySelectorAll('.champion-tag');
+                const role = roleSelect.value;
+                const champions = Array.from(championTags).map(tag => 
+                    tag.textContent.replace('✖', '').trim()
+                );
+                
+                if (champions.length > 0) {
+                    teamData[role] = champions;
+                }
+            });
+            
+            return teamData;
+        }
+
+        function collectEnemyData() {
+            const enemyInputs = document.querySelectorAll('#enemySection input[disabled]');
+            return Array.from(enemyInputs).map(input => input.value.trim()).filter(name => name);
+        }
+
+        function simulateAnalysis(teamData, enemyData, strategy) {
+            // Simulation de votre algorithme
+            const roles = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
+            const composition = [];
+            
+            roles.forEach(role => {
+                const availableChamps = teamData[role] || ['Champion par défaut'];
+                const selectedChamp = availableChamps[Math.floor(Math.random() * availableChamps.length)];
+                composition.push({ role, champion: selectedChamp });
+            });
+            
+            return {
+                composition,
+                scores: {
+                    teamScore: (Math.random() * 0.3 + 0.5).toFixed(3),
+                    avgWinrate: (Math.random() * 0.2 + 0.45).toFixed(3),
+                    avgSynergy: (Math.random() * 0.25 + 0.4).toFixed(3),
+                    counterAdvantage: enemyData.length > 0 ? (Math.random() * 0.4 - 0.2).toFixed(3) : null,
+                    overallScore: (Math.random() * 0.3 + 0.6).toFixed(3)
+                },
+                criteria: getStrategyCriteria(strategy)
+            };
+        }
+
+        function getStrategyCriteria(strategy) {
+            const criteria = {
+                'overall': 'Meilleur score global',
+                'winrate': 'Meilleur winrate moyen',
+                'synergy': 'Meilleure synergie d\'équipe',
+                'counter': 'Meilleur contre à l\'équipe ennemie'
+            };
+            return criteria[strategy] || 'Score global';
+        }
+
+        function displayResults(recommendations) {
+            const results = document.getElementById('results');
+            
+            results.innerHTML = `
+                <h3 style="color: #c8aa6e; margin-bottom: 20px;">
+                    🎯 Recommandation basée sur : ${recommendations.criteria}
+                </h3>
+                
+                <div class="recommendation-card">
+                    <h4 style="color: #f0e6d2; margin-bottom: 15px;">💫 Composition Recommandée</h4>
+                    
+                    <div class="composition-display">
+                        ${recommendations.composition.map(item => `
+                            <div class="role-champion">
+                                <div class="role-name">${item.role}</div>
+                                <div class="champion-name">${item.champion}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="scores">
+                        <div class="score-item">
+                            <div class="score-label">Score d'Équipe</div>
+                            <div class="score-value">${recommendations.scores.teamScore}</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">Winrate Moyen</div>
+                            <div class="score-value">${(recommendations.scores.avgWinrate * 100).toFixed(1)}%</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">Synergie Moyenne</div>
+                            <div class="score-value">${recommendations.scores.avgSynergy}</div>
+                        </div>
+                        ${recommendations.scores.counterAdvantage !== null ? `
+                            <div class="score-item">
+                                <div class="score-label">Avantage Counter</div>
+                                <div class="score-value">${recommendations.scores.counterAdvantage}</div>
+                            </div>
+                        ` : ''}
+                        <div class="score-item">
+                            <div class="score-label">Score Global</div>
+                            <div class="score-value" style="color: #c8aa6e;">${recommendations.scores.overallScore}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: rgba(70, 55, 20, 0.2); border-radius: 8px;">
+                    <h4 style="color: #c8aa6e; margin-bottom: 10px;">💡 Conseils d'Optimisation</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 8px;">🔸 Cette composition maximise ${recommendations.criteria.toLowerCase()}</li>
+                        <li style="margin-bottom: 8px;">🔸 Synergie particulièrement forte entre les champions sélectionnés</li>
+                        ${recommendations.scores.counterAdvantage !== null && parseFloat(recommendations.scores.counterAdvantage) > 0 ? 
+                            '<li style="margin-bottom: 8px;">🔸 Bon avantage contre l\'équipe ennemie identifiée</li>' : ''}
+                        <li>🔸 Pensez à adapter votre stratégie en fonction de la phase de jeu</li>
+                    </ul>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
