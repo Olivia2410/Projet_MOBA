@@ -384,7 +384,7 @@
         async function loadData() {
             try {
                 // 1. Charger les rôles
-                const rolesResponse = await fetch('../static/champion_roles.csv');
+                const rolesResponse = await fetch('https://Olivia2410.github.io/test/static/champion_roles.csv');
                 if (!rolesResponse.ok) throw new Error('Échec du chargement des rôles');
                 const rolesText = await rolesResponse.text();
                 const rolesData = parseCSV(rolesText);
@@ -435,22 +435,9 @@
                 console.log('Données chargées avec succès:', championData);
 
             } catch (error) {
-                console.error("Erreur de chargement:", error);
-                // Fallback minimal si échec
-                championData.roles = {
-                    Top: ['Darius', 'Garen', 'Aatrox'],
-                    Jungle: ['Lee Sin', 'Amumu', 'Khazix'],
-                    Mid: ['Ahri', 'Zed', 'Yasuo'],
-                    ADC: ['Jinx', 'Ashe', 'Ezreal'],
-                    Support: ['Thresh', 'Leona', 'Janna']
-                };
-                
-                // Remplir les images par défaut
-                Object.values(championData.roles).flat().forEach(champ => {
-                    championImages[champ] = '../static/img/default.jpg';
-                });
-                
-                alert("Les données n'ont pas pu charger complètement. Mode limité activé avec quelques champions de base.");
+                console.error("Échec critique:", error);
+                // Solution radicale - rechargez la page
+                setTimeout(() => location.reload(), 3000);
             }
         }
 
