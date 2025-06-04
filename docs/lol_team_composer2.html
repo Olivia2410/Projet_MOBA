@@ -87,20 +87,34 @@
             margin-bottom: 10px;
         }
 
-        .champion-input {
-            flex: 1;
+        .champion-selector {
+            width: 100%;
             background: #1e2328;
             border: 1px solid #463714;
             color: #f0e6d2;
             padding: 10px;
             border-radius: 6px;
             font-size: 1rem;
+            margin-bottom: 10px;
         }
 
-        .champion-input:focus {
+        .champion-selector:focus {
             outline: none;
             border-color: #c8aa6e;
             box-shadow: 0 0 0 2px rgba(200, 170, 110, 0.3);
+        }
+
+        .champion-option {
+            padding: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .champion-option img {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
         }
 
         .add-btn, .remove-btn {
@@ -152,6 +166,13 @@
             box-shadow: 0 2px 8px rgba(91, 192, 222, 0.3);
         }
 
+        .champion-tag img {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
         .champion-tag .remove {
             cursor: pointer;
             font-weight: bold;
@@ -161,13 +182,6 @@
         .champion-tag .remove:hover {
             opacity: 1;
             color: #ff6b6b;
-        }
-
-        .champion-tag img {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            object-fit: cover;
         }
 
         .enemy-section input {
@@ -362,7 +376,15 @@
 
     <script>
         // Variables globales pour stocker les données
-        let championData = {};
+        let championData = {
+            roles: {
+                'Top': [],
+                'Jungle': [],
+                'Mid': [],
+                'ADC': [],
+                'Support': []
+            }
+        };
         let championRoles = {};
         let championWinrates = {};
         let championImages = {};
@@ -391,14 +413,6 @@
                 });
                 
                 // Organiser les champions par rôle pour l'interface
-                championData.roles = {
-                    'Top': [],
-                    'Jungle': [],
-                    'Mid': [],
-                    'ADC': [],
-                    'Support': []
-                };
-                
                 Object.keys(championRoles).forEach(champion => {
                     const roles = championRoles[champion];
                     roles.forEach(role => {
@@ -468,7 +482,7 @@
             playerDiv.innerHTML = `
                 <div class="player-header">
                     <span class="player-title">Joueur ${playerCount}</span>
-                    <select class="role-selector" onchange="updateRoleSuggestions(${playerCount}, this.value)">
+                    <select class="role-selector" onchange="updateChampionDropdown(${playerCount}, this.value)">
                         <option value="Top" ${defaultRole === 'Top' ? 'selected' : ''}>🛡️ Top</option>
                         <option value="Jungle" ${defaultRole === 'Jungle' ? 'selected' : ''}>🌲 Jungle</option>
                         <option value="Mid" ${defaultRole === 'Mid' ? 'selected' : ''}>⚡ Mid</option>
@@ -477,60 +491,47 @@
                     </select>
                     ${playerCount > 1 ? `<button class="remove-btn" onclick="removePlayer(${playerCount})">❌</button>` : ''}
                 </div>
-                <div class="champion-input-container">
-                    <input type="text" class="champion-input" placeholder="Nom du champion..." 
-                           id="championInput-${playerCount}" onkeypress="handleChampionKeypress(event, ${playerCount})">
-                    <button class="add-btn" onclick="addChampionToPlayer(${playerCount})">➕</button>
-                </div>
+                <select class="champion-selector" id="championSelect-${playerCount}" onchange="addSelectedChampion(${playerCount})">
+                    <option value="">Sélectionnez un champion...</option>
+                </select>
                 <div class="champion-list" id="championList-${playerCount}"></div>
             `;
             
             container.appendChild(playerDiv);
-            updateRoleSuggestions(playerCount, defaultRole || 'Top');
+            updateChampionDropdown(playerCount, defaultRole || 'Top');
         }
 
-        function removePlayer(playerId) {
-            const playerDiv = document.getElementById(`player-${playerId}`);
-            if (playerDiv) {
-                playerDiv.remove();
-            }
-        }
-
-        function updateRoleSuggestions(playerId, role) {
-            const input = document.getElementById(`championInput-${playerId}`);
-            const suggestions = championData.roles[role] || [];
+        function updateChampionDropdown(playerId, role) {
+            const select = document.getElementById(`championSelect-${playerId}`);
+            select.innerHTML = '<option value="">Sélectionnez un champion...</option>';
             
-            // Ajouter un datalist pour l'autocomplétion
-            let datalistId = `suggestions-${playerId}`;
-            let existingDatalist = document.getElementById(datalistId);
-            if (existingDatalist) {
-                existingDatalist.remove();
-            }
-            
-            const datalist = document.createElement('datalist');
-            datalist.id = datalistId;
-            suggestions.forEach(champ => {
+            const champions = championData.roles[role] || [];
+            champions.forEach(champ => {
                 const option = document.createElement('option');
                 option.value = champ;
-                datalist.appendChild(option);
+                option.className = 'champion-option';
+                option.innerHTML = `
+                    ${champ}
+                `;
+                select.appendChild(option);
             });
-            
-            input.setAttribute('list', datalistId);
-            document.body.appendChild(datalist);
         }
 
-        function handleChampionKeypress(event, playerId) {
-            if (event.key === 'Enter') {
-                addChampionToPlayer(playerId);
-            }
-        }
-
-        function addChampionToPlayer(playerId) {
-            const input = document.getElementById(`championInput-${playerId}`);
-            const championName = input.value.trim();
+        function addSelectedChampion(playerId) {
+            const select = document.getElementById(`championSelect-${playerId}`);
+            const championName = select.value;
             
-            if (championName && championRoles[championName]) {
+            if (championName) {
                 const championList = document.getElementById(`championList-${playerId}`);
+                
+                // Vérifier si le champion est déjà dans la liste
+                const existingChamps = championList.querySelectorAll('.champion-tag');
+                for (const champ of existingChamps) {
+                    if (champ.textContent.includes(championName)) {
+                        return; // Ne pas ajouter de doublon
+                    }
+                }
+                
                 const championTag = document.createElement('div');
                 championTag.className = 'champion-tag';
                 championTag.innerHTML = `
@@ -540,9 +541,14 @@
                 `;
                 
                 championList.appendChild(championTag);
-                input.value = '';
-            } else if (championName) {
-                alert("Champion non reconnu. Veuillez choisir un champion valide.");
+                select.value = "";
+            }
+        }
+
+        function removePlayer(playerId) {
+            const playerDiv = document.getElementById(`player-${playerId}`);
+            if (playerDiv) {
+                playerDiv.remove();
             }
         }
 
@@ -553,48 +559,48 @@
             const inputContainer = document.createElement('div');
             inputContainer.className = 'champion-input-container';
             inputContainer.innerHTML = `
-                <input type="text" class="champion-input" placeholder="Champion ennemi..." 
-                       id="enemyInput-${enemyChampionCount}" onkeypress="handleEnemyKeypress(event, ${enemyChampionCount})">
-                <button class="add-btn" onclick="addEnemyChampionFromInput(${enemyChampionCount})">➕</button>
+                <select class="champion-selector" id="enemySelect-${enemyChampionCount}">
+                    <option value="">Sélectionnez un champion ennemi...</option>
+                </select>
+                <button class="add-btn" onclick="addSelectedEnemy(${enemyChampionCount})">➕</button>
                 <button class="remove-btn" onclick="this.parentElement.remove()">❌</button>
             `;
             
             enemySection.appendChild(inputContainer);
-            
-            // Mettre à jour les suggestions pour ce nouvel input
-            updateEnemySuggestions(enemyChampionCount);
+            updateEnemyDropdown(enemyChampionCount);
         }
 
-        function updateEnemySuggestions(inputId) {
-            const input = document.getElementById(`enemyInput-${inputId}`);
-            const datalist = document.createElement('datalist');
-            datalist.id = `enemySuggestions-${inputId}`;
+        function updateEnemyDropdown(inputId) {
+            const select = document.getElementById(`enemySelect-${inputId}`);
+            select.innerHTML = '<option value="">Sélectionnez un champion ennemi...</option>';
             
             Object.keys(championRoles).forEach(champ => {
                 const option = document.createElement('option');
                 option.value = champ;
-                datalist.appendChild(option);
+                option.className = 'champion-option';
+                option.innerHTML = champ;
+                select.appendChild(option);
             });
-            
-            input.setAttribute('list', datalist.id);
-            document.body.appendChild(datalist);
         }
 
-        function handleEnemyKeypress(event, inputId) {
-            if (event.key === 'Enter') {
-                addEnemyChampionFromInput(inputId);
-            }
-        }
-
-        function addEnemyChampionFromInput(inputId) {
-            const input = document.getElementById(`enemyInput-${inputId}`);
-            const championName = input.value.trim();
+        function addSelectedEnemy(inputId) {
+            const select = document.getElementById(`enemySelect-${inputId}`);
+            const championName = select.value;
             
-            if (championName && championRoles[championName]) {
-                input.value = championName;
-                input.disabled = true;
-            } else if (championName) {
-                alert("Champion ennemi non reconnu. Veuillez choisir un champion valide.");
+            if (championName) {
+                const enemySection = document.getElementById('enemySection');
+                const championTag = document.createElement('div');
+                championTag.className = 'champion-tag';
+                championTag.innerHTML = `
+                    <img src="${championImages[championName]}" alt="${championName}" onerror="this.src='static/img/default.jpg'">
+                    ${championName}
+                    <span class="remove" onclick="this.parentElement.remove()">✖</span>
+                `;
+                
+                // Insérer avant le bouton d'ajout suivant
+                const container = select.parentElement;
+                container.insertBefore(championTag, container.lastElementChild);
+                select.value = "";
             }
         }
 
@@ -639,8 +645,10 @@
         }
 
         function collectEnemyData() {
-            const enemyInputs = document.querySelectorAll('#enemySection input[disabled]');
-            return Array.from(enemyInputs).map(input => input.value.trim()).filter(name => name);
+            const enemyTags = document.querySelectorAll('#enemySection .champion-tag');
+            return Array.from(enemyTags).map(tag => 
+                tag.textContent.replace('✖', '').trim()
+            );
         }
 
         async function simulateRealAnalysis(teamData, enemyData, strategy) {
