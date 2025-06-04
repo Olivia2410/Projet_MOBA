@@ -1,21 +1,15 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
     <title>LoL Team Composer</title>
-    <style>
-        /* ... ton CSS existant ici, inchangé ... */
-    </style>
 </head>
 <body>
-    <div class="container">
-        <!-- ... ton HTML existant ici, inchangé ... -->
-    </div>
+    <h1>Test LoL Team Composer</h1>
+    <div id="results" style="font-family: sans-serif;"></div>
 
     <script>
-        // === Chargement des données CSV ===
-        let winrateData = {}, synergyData = {}, roleData = {};
+        let winrateData = {}, synergyData = {};
 
         async function loadCSV(path) {
             const response = await fetch(path);
@@ -33,7 +27,6 @@
         async function loadData() {
             const winrate = await loadCSV('static/predicted_champion_winrates.csv');
             const synergy = await loadCSV('static/pair_winrate_predictions_with_embeddings.csv');
-            const roles = await loadCSV('static/champion_roles.csv');
 
             winrate.forEach(row => {
                 winrateData[row.Champion] = parseFloat(row.Predicted_Winrate);
@@ -44,9 +37,7 @@
                 synergyData[key] = parseFloat(row.Predicted_Winrate);
             });
 
-            roles.forEach(row => {
-                roleData[row.champion] = row.roles.split(',').map(r => r.trim().toLowerCase());
-            });
+            runTestAnalysis();
         }
 
         function getChampionWinrate(champ) {
@@ -60,106 +51,38 @@
 
         function getTeamScore(team) {
             const winrates = team.map(getChampionWinrate);
-            const avg_winrate = winrates.reduce((a, b) => a + b, 0) / winrates.length;
-            let synergies = [];
+            const avgWinrate = winrates.reduce((a, b) => a + b, 0) / team.length;
+
+            const synergies = [];
             for (let i = 0; i < team.length; i++) {
                 for (let j = i + 1; j < team.length; j++) {
                     synergies.push(getPairSynergy(team[i], team[j]));
                 }
             }
-            const avg_synergy = synergies.length ? synergies.reduce((a, b) => a + b, 0) / synergies.length : 0.5;
+            const avgSynergy = synergies.reduce((a, b) => a + b, 0) / synergies.length;
+
             return {
-                winrate: avg_winrate,
-                synergy: avg_synergy,
-                overall: (0.5 * avg_winrate + 0.3 * avg_synergy).toFixed(3)
+                winrate: avgWinrate,
+                synergy: avgSynergy,
+                overall: (0.5 * avgWinrate + 0.3 * avgSynergy).toFixed(3)
             };
         }
 
-        function formatImageName(champ) {
-            const lowerList = ['aatrox', 'alistar', 'akshan', 'ahri', 'akali', 'ambessa'];
-            return lowerList.includes(champ.toLowerCase()) ? `${champ.toLowerCase()}.jpg` : `${champ}.jpg`;
-        }
-
-        // Appelle loadData au démarrage pour précharger les données
-        loadData();
-
-        // Modifie la fonction simulateAnalysis pour intégrer les vraies données
-        function simulateAnalysis(teamData, enemyData, strategy) {
-            const roles = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
-            const composition = [];
-            const selectedChamps = [];
-
-            roles.forEach(role => {
-                const candidates = teamData[role] || ['Aatrox'];
-                const selected = candidates[0];
-                composition.push({ role, champion: selected });
-                selectedChamps.push(selected);
-            });
-
-            const scores = getTeamScore(selectedChamps);
-
-            return {
-                composition,
-                scores: {
-                    teamScore: scores.overall,
-                    avgWinrate: scores.winrate,
-                    avgSynergy: scores.synergy,
-                    counterAdvantage: enemyData.length ? (Math.random() * 0.4 - 0.2).toFixed(3) : null,
-                    overallScore: scores.overall
-                },
-                criteria: getStrategyCriteria(strategy)
-            };
-        }
-
-        // Ajout des images dans displayResults
-        function displayResults(recommendations) {
-            const results = document.getElementById('results');
-
-            results.innerHTML = `
-                <h3 style="color: #c8aa6e; margin-bottom: 20px;">
-                    🎯 Recommandation basée sur : ${recommendations.criteria}
-                </h3>
-
-                <div class="recommendation-card">
-                    <h4 style="color: #f0e6d2; margin-bottom: 15px;">💫 Composition Recommandée</h4>
-
-                    <div class="composition-display">
-                        ${recommendations.composition.map(item => `
-                            <div class="role-champion">
-                                <div class="role-name">${item.role}</div>
-                                <img src="img/${formatImageName(item.champion)}" alt="${item.champion}" style="width:60px; border-radius:8px; margin-bottom:8px;">
-                                <div class="champion-name">${item.champion}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div class="scores">
-                        <div class="score-item">
-                            <div class="score-label">Score d'Équipe</div>
-                            <div class="score-value">${recommendations.scores.teamScore}</div>
-                        </div>
-                        <div class="score-item">
-                            <div class="score-label">Winrate Moyen</div>
-                            <div class="score-value">${(recommendations.scores.avgWinrate * 100).toFixed(1)}%</div>
-                        </div>
-                        <div class="score-item">
-                            <div class="score-label">Synergie Moyenne</div>
-                            <div class="score-value">${recommendations.scores.avgSynergy.toFixed(3)}</div>
-                        </div>
-                        ${recommendations.scores.counterAdvantage !== null ? `
-                            <div class="score-item">
-                                <div class="score-label">Avantage Counter</div>
-                                <div class="score-value">${recommendations.scores.counterAdvantage}</div>
-                            </div>
-                        ` : ''}
-                        <div class="score-item">
-                            <div class="score-label">Score Global</div>
-                            <div class="score-value" style="color: #c8aa6e;">${recommendations.scores.overallScore}</div>
-                        </div>
-                    </div>
-                </div>
+        function runTestAnalysis() {
+            const team = ['Aatrox', 'Ahri', 'Jinx', 'Thresh', 'Graves'];
+            const scores = getTeamScore(team);
+            const container = document.getElementById('results');
+            container.innerHTML = `
+                <h2>Résultat de test :</h2>
+                <p>Winrate moyen : ${(scores.winrate * 100).toFixed(1)}%</p>
+                <p>Synergie moyenne : ${scores.synergy.toFixed(3)}</p>
+                <p>Score global : ${scores.overall}</p>
             `;
         }
+
+        window.onload = () => {
+            loadData();
+        };
     </script>
 </body>
 </html>
