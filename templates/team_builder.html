@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-center">⚔️ Team Builder</h1>
+
+<form method="post"  style="background-color: #25215dc2;" class="shadow-lg p-6 rounded-lg w-full max-w-7xl mx-auto space-y-6 text-gray-100">
+  <div  class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    
+    <!-- Ma Team Section -->
+    <div style="background-color: #302c5ec2;" class=" p-6 rounded-lg">
+      <h2 class="text-2xl font-bold text-blue-300 mb-4 text-center">🛡️ Ma Team</h2>
+      
+      {% for player in my_team %}
+      {% set player_index = loop.index0 %}
+      <div  style="background-color: #25215dc2;" class="p-4 rounded-md mb-4 border border-blue-500">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-semibold text-blue-200">Joueur {{ loop.index }}</h3>
+          {% if loop.index0 > 0 %}  <!-- Ne pas permettre de supprimer le premier joueur -->
+          <button type="submit" name="action" value="remove_my_player_{{ loop.index }}" 
+                  class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+              ❌ Supprimer
+          </button>
+          {% endif %}
+        </div>
+        
+        <div  class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- Sélection du rôle -->
+          <div>
+            <label class="block mb-1 text-sm font-medium text-blue-300">Rôle :</label>
+            <select name="my_team_role_{{ loop.index0 }}" class="w-full bg-gray-600 text-gray-100 border border-blue-400 px-2 py-1 rounded text-sm"
+                    onchange="this.form.submit()">
+              <option value="">Choisir un rôle</option>
+              <option value="top" {% if player.role == 'top' %}selected{% endif %}>Top</option>
+              <option value="jungle" {% if player.role == 'jungle' %}selected{% endif %}>Jungle</option>
+              <option value="mid" {% if player.role == 'mid' %}selected{% endif %}>Mid</option>
+              <option value="adc" {% if player.role == 'adc' %}selected{% endif %}>ADC</option>
+              <option value="support" {% if player.role == 'support' %}selected{% endif %}>Support</option>
+            </select>
+          </div>
+          
+          <!-- Sélection du champion -->
+          <div>
+            <label class="block mb-1 text-sm font-medium text-blue-300">Champion :</label>
+            <select name="new_my_champion_{{ loop.index0 }}" 
+                    class="w-full bg-gray-600 text-gray-100 border border-blue-400 px-2 py-1 rounded text-sm">
+              <option value="">Choisir un champion</option>
+              {% if player.role %}
+                {% for champ in champions_by_role[player.role] %}
+                  <option value="{{ champ }}">{{ champ }}</option>
+                {% endfor %}
+              {% endif %}
+            </select>
+            <input type="hidden" name="my_team_champions_{{ loop.index0 }}" value="{{ player.champions|join(',') }}">
+          </div>
+          
+          
+          <!-- Bouton Ajouter -->
+          <div class="flex items-end">
+            <button type="submit" name="action" value="add_my_champion_{{ loop.index0 }}" 
+                    class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm w-full">
+              ➕ Ajouter
+            </button>
+          </div>
+        </div>
+        
+        <!-- Champions sélectionnés -->
+        {% if player.champions %}
+        <div class="mt-3">
+          <label class="block mb-1 text-sm font-medium text-blue-300">Champions sélectionnés :</label>
+          <div class="flex flex-wrap gap-2">
+            {% for champ in player.champions %}
+            <div class="bg-blue-600 text-white px-2 py-1 rounded text-xs flex items-center">
+              {{ champ }}
+              <button name="action" value="remove_my_champion_{{ player_index }}_{{ champ|replace(' ', '_') }}">×</button>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      
+      <!-- Bouton Ajouter Joueur -->
+      {% if my_team|length < 5 %}
+      <button type="submit" name="action" value="add_my_player" 
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full font-semibold">
+        ➕ Ajouter un joueur
+      </button>
+      {% endif %}
+    </div>
+    
+    <!-- Team Adverse Section -->
+    <div style="background-color: #302c5ec2;" class="p-6 rounded-lg">
+      <h2 class="text-2xl font-bold text-red-300 mb-4 text-center">⚔️ Team Adverse</h2>
+      
+      {% if enemy_team %}
+      {% for player in enemy_team %}
+      {% set enemy_player_index = loop.index0 %}
+      <div  style="background-color: #25215dc2;" class="p-4 rounded-md mb-4 border border-red-500">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-semibold text-red-200">Joueur Adverse {{ loop.index }}</h3>
+          <button type="submit" name="action" value="remove_enemy_player_{{ loop.index0 }}" 
+                  class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+            ❌ Supprimer
+          </button>
+        </div>
+        
+        {% if player.mode == 'id' %}
+        <!-- Mode saisie d'ID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- ID Joueur -->
+          <div>
+            <label class="block mb-1 text-sm font-medium text-red-300">ID Joueur :</label>
+            <input type="text" name="enemy_player_id_{{ loop.index0 }}" 
+                  value="{{ player.player_id if player.player_id else '' }}"
+                  placeholder="ID du joueur"
+                  class="w-full bg-gray-600 text-gray-100 border border-red-400 px-2 py-1 rounded text-sm">
+          </div>
+          
+          <!-- tag de région -->
+          <div>
+            <label class="block mb-1 text-sm font-medium text-red-300">Région(serveur) :</label>
+            <select name="enemy_player_region_{{ loop.index0 }}" 
+                    class="w-full bg-gray-600 text-gray-100 border border-red-400 px-2 py-1 rounded text-sm">
+                <option value="">Choisir une région</option>
+                <option value="EUW" {% if player.region == 'EUW' %}selected{% endif %}>EUW</option>
+                <option value="NA" {% if player.region == 'NA' %}selected{% endif %}>NA</option>
+                <option value="EUNE" {% if player.region == 'EUNE' %}selected{% endif %}>EUNE</option>
+                <option value="KR" {% if player.region == 'KR' %}selected{% endif %}>KR</option>
+                <option value="BR" {% if player.region == 'BR' %}selected{% endif %}>BR</option>
+                <option value="LAN" {% if player.region == 'LAN' %}selected{% endif %}>LAN</option>
+                <option value="LAS" {% if player.region == 'LAS' %}selected{% endif %}>LAS</option>
+                <option value="OCE" {% if player.region == 'OCE' %}selected{% endif %}>OCE</option>
+                <option value="RU" {% if player.region == 'RU' %}selected{% endif %}>RU</option>
+                <option value="TR" {% if player.region == 'TR' %}selected{% endif %}>TR</option>
+                <option value="JP" {% if player.region == 'JP' %}selected{% endif %}>JP</option>
+            </select>
+          </div>
+          
+          <div class="col-span-2 flex justify-between">
+            <button type="submit" name="action" value="fetch_enemy_champions_{{ loop.index0 }}" 
+                    class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded font-semibold">
+                🔍 Récupérer les champions
+            </button>
+            
+            <button type="submit" name="action" value="switch_to_normal_mode_{{ loop.index0 }}" 
+                    class="bg-indigo-600 hover:bg-gray-700 text-white px-4 py-2 rounded font-semibold">
+                ← Retour au mode normal
+            </button>
+          </div>
+        </div>
+        {% else %}
+        <!-- Mode normal -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <!-- Sélection du rôle -->
+            <div>
+              <label class="block mb-1 text-sm font-medium text-red-300">Rôle :</label>
+              <select name="enemy_team_role_{{ loop.index0 }}" class="w-full bg-gray-600 text-gray-100 border border-red-400 px-2 py-1 rounded text-sm"
+                      onchange="this.form.submit()">
+                <option value="">Choisir un rôle</option>
+                <option value="top" {% if player.role == 'top' %}selected{% endif %}>Top</option>
+                <option value="jungle" {% if player.role == 'jungle' %}selected{% endif %}>Jungle</option>
+                <option value="mid" {% if player.role == 'mid' %}selected{% endif %}>Mid</option>
+                <option value="adc" {% if player.role == 'adc' %}selected{% endif %}>ADC</option>
+                <option value="support" {% if player.role == 'support' %}selected{% endif %}>Support</option>
+              </select>
+            </div>
+            
+            <!-- Sélection du champion -->
+            <div>
+              <label class="block mb-1 text-sm font-medium text-red-300">Champion :</label>
+              <select name="new_enemy_champion_{{ loop.index0 }}" 
+                      class="w-full bg-gray-600 text-gray-100 border border-red-400 px-2 py-1 rounded text-sm">
+                <option value="">Choisir un champion</option>
+                {% if player.role %}
+                  {% for champ in champions_by_role[player.role] %}
+                    <option value="{{ champ }}">{{ champ }}</option>
+                  {% endfor %}
+                {% endif %}
+              </select>
+              <input type="hidden" name="enemy_team_champions_{{ loop.index0 }}" value="{{ player.champions|join(',') }}">
+            </div>
+            
+            <!-- Bouton Ajouter -->
+            <div class="flex items-end">
+              <button type="submit" name="action" value="add_enemy_champion_{{ loop.index0 }}" 
+                      class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm w-full">
+                ➕ Ajouter
+              </button>
+            </div>
+          </div>
+          
+          <!-- Champions sélectionnés -->
+          {% if player.champions %}
+          <div class="mt-3">
+            <label class="block mb-1 text-sm font-medium text-red-300">Champions sélectionnés :</label>
+            <div class="flex flex-wrap gap-2">
+              {% for champ in player.champions %}
+              <div class="bg-red-600 text-white px-2 py-1 rounded text-xs flex items-center">
+                {{ champ }}
+                <button type="submit" name="action" value="remove_enemy_champion_{{ enemy_player_index }}_{{ champ|replace(' ', '_') }}" 
+                        class="ml-1 text-red-200 hover:text-red-100">×</button>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          
+          <div class="mt-3">
+            <button type="submit" name="action" value="switch_to_id_mode_{{ loop.index0 }}" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold w-full">
+              🔢 Saisir par ID joueur
+            </button>
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
+      
+      <!-- Bouton Ajouter Joueur Adverse -->
+      <button type="submit" name="action" value="add_enemy_player" 
+              class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded w-full font-semibold">
+        ➕ Ajouter un joueur adverse
+      </button>
+      
+      <!-- Boutons globaux pour l'équipe ennemie -->
+      <div class="flex gap-2 mt-4">
+        <button type="submit" name="action" value="recommend_enemy_team" 
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded font-semibold w-full">
+            🏆 Recommander la meilleure équipe ennemie
+        </button>
+      </div>
+    </div>
+  
+  <!-- Section Analyse et Recommandations -->
+  <div style="background-color: #302c5ec2;"class="p-6 rounded-lg mt-8">
+    <h2 class="text-2xl font-bold text-purple-300 mb-4 text-center">📊 Analyse et Recommandations</h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <!-- Type d'analyse -->
+      <div>
+        <label for="analysis_type" class="block mb-1 font-medium text-purple-300">Type d'analyse :</label>
+        <select name="analysis_type" id="analysis_type" 
+                class="w-full bg-gray-600 text-gray-100 border border-purple-400 px-3 py-2 rounded-md">
+          <option value="score_global" {% if analysis_type == 'score_global' %}selected{% endif %}>Score Global</option>
+          <option value="meilleur_winrate" {% if analysis_type == 'meilleur_winrate' %}selected{% endif %}>Meilleur Winrate</option>
+          <option value="meilleur_synergie" {% if analysis_type == 'meilleur_synergie' %}selected{% endif %}>Meilleure Synergie</option>
+          <option value="meilleur_counter" {% if analysis_type == 'meilleur_counter' %}selected{% endif %}>Meilleur Counter</option>
+        </select>
+      </div>
+      
+      <!-- Bouton Analyser -->
+      <div class="flex items-end">
+        <button type="submit" name="action" value="analyze" 
+                class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-md w-full font-semibold transition">
+          🔍 Analyser et Recommander
+        </button>
+      </div>
+    </div>
+    
+    <!-- Résultats d'analyse -->
+    {% if analysis_result %}
+    <div class="bg-gray-800 p-6 rounded-lg">
+      <h3 class="text-xl font-bold text-purple-200 mb-4">Résultats de l'analyse</h3>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Composition recommandée -->
+        <div class="bg-gray-700 p-4 rounded-md">
+          <h4 class="text-lg font-semibold text-green-300 mb-3">✅ Composition Recommandée</h4>
+          {% if analysis_result.recommended_composition %}
+            <div class="space-y-2">
+              {% for role, champion in analysis_result.recommended_composition.items() %}
+              <div class="flex justify-between items-center bg-gray-600 p-2 rounded">
+                <span class="text-gray-300 capitalize">{{ role }} :</span>
+                <span class="text-green-400 font-semibold">{{ champion }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+        
+        <!-- Statistiques -->
+        <div class="bg-gray-700 p-4 rounded-md">
+          <h4 class="text-lg font-semibold text-blue-300 mb-3">📈 Statistiques</h4>
+          <div class="space-y-2">
+            {% if analysis_result.win_rate %}
+            <div class="flex justify-between">
+              <span class="text-gray-300">Taux de victoire estimé :</span>
+              <span class="text-green-400 font-semibold">{{ '%.1f' | format(analysis_result.win_rate * 100) }}%</span>
+            </div>
+            {% endif %}
+            {% if analysis_result.synergy_score %}
+            <div class="flex justify-between">
+              <span class="text-gray-300">Score de synergie :</span>
+              <span class="text-blue-400 font-semibold">{{ '%.1f' | format(analysis_result.synergy_score * 100) }}%</span>
+            </div>
+            {% endif %}
+            {% if analysis_result.counter_score %}
+            <div class="flex justify-between">
+              <span class="text-gray-300">Score de counter :</span>
+              <span class="text-red-400 font-semibold">{{ '%.1f' | format(analysis_result.counter_score * 100) }}%</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Conseils -->
+      {% if analysis_result.recommendations %}
+      <div class="mt-6 bg-gray-700 p-4 rounded-md">
+        <h4 class="text-lg font-semibold text-yellow-300 mb-3">💡 Conseils</h4>
+        <ul class="space-y-2">
+          {% for recommendation in analysis_result.recommendations %}
+          <li class="text-gray-300">• {{ recommendation }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      
+      <!-- Champions alternatifs -->
+      {% if analysis_result.alternative_champions %}
+      <div class="mt-6 bg-gray-700 p-4 rounded-md">
+        <h4 class="text-lg font-semibold text-orange-300 mb-3">🔄 Champions Alternatifs</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {% for role, champions in analysis_result.alternative_champions.items() %}
+          <div class="bg-gray-600 p-3 rounded">
+            <h5 class="font-semibold text-orange-200 mb-2 capitalize">{{ role }}</h5>
+            <div class="space-y-1">
+              {% for champion in champions[:3] %}
+              <div class="text-sm text-gray-300">{{ champion }}</div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</form>
+
+
+{% endblock %}

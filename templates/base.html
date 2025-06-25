@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ title or "LoLytics" }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+    href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#1E90FF",
+            dark: "#0e0e10",
+            violetdark: "rgba(55, 0, 70, 0.7)", /* violet sombre transparent */
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    /* Fond image */
+    .background-image {
+      position: fixed;
+      inset: 0;
+      background-image: url("/static/img/ruins.png");
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.2) contrast(0.8);
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    /* Calque violet sombre semi-transparent */
+    .violet-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(21, 20, 118, 0.429);
+      z-index: -1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-black text-white min-h-screen relative">
+  <!-- Image de fond -->
+  <div class="background-image"></div>
+  <!-- Calque violet sombre -->
+  <div class="violet-overlay"></div>
+
+
+  <!-- Barre de navigation -->
+  <nav class="bg-gray-900 bg-opacity-80 border-b border-gray-800 shadow-md">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+    <a href="/" class="text-5xl font-extrabold tracking-tight group flex gap-0">
+      <span class="text-[#382396] transition duration-300 group-hover:text-white">LoL</span>
+      <span class="text-white transition duration-300 group-hover:text-[#382396]">ytics</span>
+    </a>
+
+
+
+
+      <div class="hidden md:flex space-x-6 text-lg font-medium">
+        <a href="/champions" class="hover:text-yellow-400 transition">Champions</a>
+        <a href="/counter" class="hover:text-yellow-400 transition">Counters</a>
+        <a href="/synergy" class="hover:text-yellow-400 transition">Synergies</a>
+        <a href="/recommend" class="hover:text-yellow-400 transition">Recommendations</a>
+        <a href="/team_builder" class="hover:text-yellow-400 transition">Concepteur</a>
+      </div>
+      <button class="md:hidden text-white text-2xl">☰</button>
+    </div>
+  </nav>
+
+  <!-- Contenu principal -->
+  <div class="container mx-auto px-6 py-8 relative z-10">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

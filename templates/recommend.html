@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-center">🔍 Analyse de draft et recommandations</h1>
+
+<form method="post" style="background-color: #2824606a;"  class="shadow p-6 rounded-2xl w-full max-w-3xl mx-auto space-y-6" onsubmit="return validateDraft()">
+  <div>
+    <label for="team" class="block mb-2 font-semibold text-white">Équipe alliée :</label>
+    <input type="text" name="team" id="team" required
+           value="{{ team or '' }}"
+           class="w-full border border-white-300 px-4 py-3 rounded-xl text-black shadow-sm"
+           placeholder="ex: Ahri, Garen, Lux, Jhin, Thresh" oninput="checkDuplicateInputs()">
+    <p id="teamError" class="text-red-500 text-sm mt-1 hidden"></p>
+  </div>
+
+  <div>
+    <label for="enemy" class="block mb-2 font-semibold text-white">Équipe ennemie :</label>
+    <input type="text" name="enemy" id="enemy" required
+           value="{{ enemy or '' }}"
+           class="w-full border border-gray-300 px-4 py-3 rounded-xl text-black shadow-sm"
+           placeholder="ex: Yasuo, Darius, Morgana, Ezreal, Leona" oninput="checkDuplicateInputs()">
+    <p id="enemyError" class="text-red-500 text-sm mt-1 hidden"></p>
+  </div>
+
+  <div>
+    <label for="role" class="block mb-2 font-semibold text-white">Filtrer par rôle (optionnel) :</label>
+    <select name="role" id="role"
+            class="w-full border border-gray-300 px-4 py-3 rounded-xl text-black shadow-sm">
+      <option value="" {% if not role %}selected{% endif %}>Tous rôles</option>
+      <option value="fighter" {% if role == "fighter" %}selected{% endif %}>Fighter</option>
+      <option value="assassin" {% if role == "assassin" %}selected{% endif %}>Assassin</option>
+      <option value="mage" {% if role == "mage" %}selected{% endif %}>Mage</option>
+      <option value="marksman" {% if role == "marksman" %}selected{% endif %}>Marksman</option>
+      <option value="support" {% if role == "support" %}selected{% endif %}>Support</option>
+      <option value="tank" {% if role == "tank" %}selected{% endif %}>Tank</option>
+    </select>
+  </div>
+
+  <button id="submitBtn" type="submit"
+          class="bg-blue-500 hover:bg-blue-700 text-white px-5 py-3 rounded-xl w-full font-semibold shadow">
+    ⚔️ Analyser et recommander
+  </button>
+</form>
+
+{% if recos %}
+  <div style="background-color: #25215dc2;" class="mt-10 p-6 rounded-2xl shadow max-w-5xl mx-auto">
+    <h2 class="text-xl font-semibold mb-6 text-white text-center">💡 Champions recommandés {% if role %}pour le rôle {{ role|capitalize }}{% endif %} :</h2>
+    <div class="flex flex-wrap gap-5 justify-center">
+      {% for champ, score in recos %}
+       <div style="background-color: #25215dc2;" class="rounded-xl shadow p-5 w-65 flex flex-col items-center hover:scale-105 transition-transform duration-200">
+          <img src="/static/img/{{ champ | lower | replace(' ', '') }}.png"
+               alt="{{ champ }}" class="w-full max-h-40 object-cover rounded-md mb-3">
+          <div class="text-center text-white font-semibold text-sm">{{ champ }}</div>
+          <div class="text-sm text-white">Score : {{ score }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+{% if analysis %}
+  <div style="background-color: #25215dc2;" class="mt-10 p-6 rounded-2xl shadow max-w-4xl mx-auto">
+    <h2 class="text-xl font-semibold mb-4 text-white">📊 Analyse de la composition :</h2>
+    <ul class="text-lg text-white space-y-2">
+      <li>✅ Score de votre équipe : <strong>{{ analysis.team_score }}</strong></li>
+      <li>⚠️ Score de l'équipe ennemie : <strong>{{ analysis.enemy_score }}</strong></li>
+      <li>🛡️ Avantage counter : <strong>{{ analysis.counter_advantage }}</strong></li>
+      <li>📈 Probabilité de victoire estimée : <strong>{{ (analysis.predicted_win_probability * 100) | round(2) }}%</strong></li>
+    </ul>
+  </div>
+{% endif %}
+
+{% if error %}
+  <div class="mt-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl max-w-3xl mx-auto">
+    ⚠️ Erreur : {{ error }}
+  </div>
+{% endif %}
+
+
+<script>
+function checkDuplicateInputs() {
+  const teamInput = document.getElementById("team").value.toLowerCase().split(",").map(s => s.trim()).filter(s => s);
+  const enemyInput = document.getElementById("enemy").value.toLowerCase().split(",").map(s => s.trim()).filter(s => s);
+
+  const teamDuplicates = teamInput.filter((champ, i) => teamInput.indexOf(champ) !== i);
+  const enemyDuplicates = enemyInput.filter((champ, i) => enemyInput.indexOf(champ) !== i);
+  const common = teamInput.filter(champ => enemyInput.includes(champ));
+
+  const teamErrorEl = document.getElementById("teamError");
+  const enemyErrorEl = document.getElementById("enemyError");
+  let valid = true;
+
+  teamErrorEl.classList.add("hidden");
+  enemyErrorEl.classList.add("hidden");
+
+  if (teamDuplicates.length > 0) {
+    teamErrorEl.textContent = `❌ Le champion '${teamDuplicates[0]}' est en double dans votre équipe.`;
+    teamErrorEl.classList.remove("hidden");
+    valid = false;
+  }
+
+  if (enemyDuplicates.length > 0) {
+    enemyErrorEl.textContent = `❌ Le champion '${enemyDuplicates[0]}' est en double dans l'équipe ennemie.`;
+    enemyErrorEl.classList.remove("hidden");
+    valid = false;
+  }
+
+  if (common.length > 0) {
+    teamErrorEl.textContent = `❌ Le champion '${common[0]}' est présent dans les deux équipes.`;
+    teamErrorEl.classList.remove("hidden");
+    valid = false;
+  }
+
+  document.getElementById("submitBtn").disabled = !valid;
+  return valid;
+}
+
+function validateDraft() {
+  return checkDuplicateInputs();
+}
+</script>
+{% endblock %}

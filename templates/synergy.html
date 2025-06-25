@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-center">🤝 Synergie entre deux champions</h1>
+
+<form method="post" style="background-color: #2824606a;" class="shadow-lg p-6 rounded-lg w-full max-w-lg mx-auto space-y-4 text-gray-100">
+  <div>
+    <label for="champ1" class="block mb-1 font-medium text-white">Champion 1 :</label>
+    <select name="champ1" id="champ1" required
+            class="w-full bg-gray-700 text-gray-100 border border-indigo-500 px-3 py-2 rounded-md">
+      {% for champ in champions %}
+        <option value="{{ champ }}" {% if champ1 == champ %}selected{% endif %}>{{ champ }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label for="champ2" class="block mb-1 font-medium text-white">Champion 2 :</label>
+    <select name="champ2" id="champ2" required
+            class="w-full bg-gray-700 text-gray-100 border border-indigo-500 px-3 py-2 rounded-md">
+      {% for champ in champions %}
+        <option value="{{ champ }}" {% if champ2 == champ %}selected{% endif %}>{{ champ }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <button type="submit"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md w-full font-semibold transition">
+      🔍 Calculer la synergie
+    </button>
+  </div>
+</form>
+
+{% if result is defined %}
+  <div style="background-color: #25215dc2;" class="mt-10 p-6 rounded-lg shadow-lg max-w-6xl mx-auto text-gray-100">
+    <h2 class="text-2xl font-bold text-white mb-4 text-center">{{ champ1 }} & {{ champ2 }} — Résultat de la synergie</h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {% for champ in [champ1, champ2] %}
+      <div style="background-color: #302c5ec2;" class="p-4 rounded-md shadow-md text-center">
+        <h3 class="text-xl font-semibold mb-2">{{ champ }}</h3>
+        <img src="/static/img/{{ champ|lower }}.png" alt="{{ champ }}" class="mx-auto w-34 h-34 rounded-full mb-3">
+        <p class="text-indigo-300 mb-2">Rôle : {{ champions_roles[champ] }}</p>
+        <ul class="text-sm space-y-1">
+          <li><span class="text-gray-400">Win Rate :</span> <strong> {{ '%.2f' | format(winrates[champ] * 100) }}% </strong></li>
+          {% set pr = pick_rates.get(champ, 0) %}
+          <li>
+            <span class="text-gray-400">Pickrate:</span> 
+            <strong class="
+              {% if pr > 2 %}
+                text-green-400
+              {% elif pr < 1 %}
+                text-red-400
+              {% else %}
+                text-yellow-300
+              {% endif %}
+            ">
+              {{ '%.2f' | format(pr) }}%
+            </strong>
+          </li>
+
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div style="background-color: #302c5ec2;" class="mt-6 p-4 rounded-md shadow">
+      <h3 class="text-lg font-semibold mb-2 text-white">Détails de la synergie</h3>
+      <table class="w-full table-auto border-collapse text-sm">
+        <thead>
+          <tr>
+            <th style="background-color: #14103bc2;" class="px-4 py-2 border border-gray-600 ">Critère</th>
+            <th style="background-color: #14103bc2;" class="px-4 py-2 border border-gray-600">Valeur</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="px-4 py-2 border border-gray-600">Score de synergie</td>
+            <td class="px-4 py-2 border border-gray-600">{{ '%.2f' | format(result * 100) }}%</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-2 border border-gray-600">Aptitude au combat</td>
+            <td class="px-4 py-2 border border-gray-600">
+              {% if result >= 0.55 %}
+                <span class="text-green-400 font-semibold">Excellente</span>
+              {% elif result >= 0.50 %}
+                <span class="text-yellow-300 font-semibold">Correcte</span>
+              {% else %}
+                <span class="text-red-400 font-semibold">Faible</span>
+              {% endif %}
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div  style="background-color: #302c5ec2;"  class="mt-6 p-4 rounded-md">
+      <h3 class="text-lg font-semibold mb-2 text-white">Analyse</h3>
+      {% if result >= 0.55 %}
+        <p class="text-green-400">
+          {{ champ1 }} fonctionne extrêmement bien avec {{ champ2 }} ! Ensemble, ils gagnent environ 
+          <strong class="text-green-400">{{ '%.2f' | format(result * 100) }}%</strong> des matchs. 
+          C’est un duo très efficace à privilégier.
+        </p>
+      {% elif result >= 0.50 %}
+        <p class="text-yellow-300">
+          {{ champ1 }} a une bonne synergie avec {{ champ2 }}. Ensemble, ils gagnent environ 
+          <strong class="text-yellow-300">{{ '%.2f' | format(result * 100) }}%</strong> des matchs. 
+          Une bonne coordination peut faire la différence.
+        </p>
+      {% else %}
+        <p class="text-red-400">
+          {{ champ1 }} ne semble pas très bien fonctionner avec {{ champ2 }}. Leur taux de victoire est d’environ 
+          <strong class="text-red-400">{{ '%.2f' | format(result * 100) }}%</strong>. 
+          Il peut être judicieux de tester un autre duo.
+        </p>
+      {% endif %}
+
+    </div>
+  </div>
+{% endif %}
+
+<script>
+  const champ1Select = document.getElementById('champ1');
+  const champ2Select = document.getElementById('champ2');
+
+  function updateOptions() {
+    const champ1Value = champ1Select.value;
+    const champ2Value = champ2Select.value;
+
+    // Réactive toutes les options avant de désactiver certaines
+    for (const option of champ1Select.options) {
+      option.disabled = false;
+    }
+    for (const option of champ2Select.options) {
+      option.disabled = false;
+    }
+
+    // Désactive dans champ2 l'option sélectionnée dans champ1
+    for (const option of champ2Select.options) {
+      if (option.value === champ1Value) {
+        option.disabled = true;
+      }
+    }
+
+    // Désactive dans champ1 l'option sélectionnée dans champ2
+    for (const option of champ1Select.options) {
+      if (option.value === champ2Value) {
+        option.disabled = true;
+      }
+    }
+
+    // Ajuste les valeurs si la sélection est désactivée
+    if (champ2Select.value === champ1Value) {
+      champ2Select.value = "";
+    }
+    if (champ1Select.value === champ2Value) {
+      champ1Select.value = "";
+    }
+  }
+
+  champ1Select.addEventListener('change', updateOptions);
+  champ2Select.addEventListener('change', updateOptions);
+
+  // Initialisation au chargement
+  updateOptions();
+</script>
+
+{% endblock %}
