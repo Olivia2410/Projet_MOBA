@@ -1,4 +1,4 @@
-# MOBA Draft Analyzer
+# MOBA Draft Analyzer : LoLytics
 
 Outil d’analyse et de recommandation de compositions d’équipe pour le jeu **League of Legends**.
 
