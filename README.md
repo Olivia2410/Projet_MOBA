@@ -222,4 +222,4 @@ http://127.0.0.1:8000
 
 # Auteur
 
-Projet réalisé dans le cadre d’un projet universitaire en **UE PROJET** par **Lucile HU et Olivia ZHENG* en double licence Infromatique et Mathématiques durant l'année universitaire 2024-2025, projet encadré par **Mohamed OUAGUENOUNI**  .
+Projet réalisé dans le cadre d’un projet universitaire en **UE PROJET** par **Lucile HU et Olivia ZHENG** en double licence Infromatique et Mathématiques durant l'année universitaire 2024-2025, projet encadré par **Mohamed OUAGUENOUNI**  .
