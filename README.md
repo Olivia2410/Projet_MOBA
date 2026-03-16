@@ -105,6 +105,7 @@ metanalysis/
 ├── counter_score.py
 ├── winrate.py
 ├── synergy.py
+├── extraire_champions.py
 │
 ├── templates/
 │   ├── champions.html
@@ -120,6 +121,7 @@ metanalysis/
 │   ├── pair_winrate_predictions_with_embeddings.csv
 │   ├── top_match_data.csv
 │
+│── requirements.txt
 └── README.md
 ```
 
